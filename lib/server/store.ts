@@ -21,6 +21,11 @@ export interface Store {
   getSong(id: number): Promise<SongRow | null>;
   knownUrls(source: SourceId): Promise<Set<string>>;
   upsertSongs(rows: NewSong[]): Promise<number>;
+  songsByUrls(urls: string[]): Promise<SongRow[]>;
+  /** จองโควตาค้นผ่าน search engine: คืน true ถ้าคำนี้ยังไม่เคยค้นใน 30 วันและเดือนนี้ยังไม่ถึง limit */
+  takeWebSearch(qNormalized: string, limit: number): Promise<boolean>;
+  /** search engine ตอบไม่สำเร็จ: ลบคำนี้ออกจากรายการที่ค้นแล้ว ครั้งหน้าจะได้ลองใหม่ */
+  forgetWebSearch(qNormalized: string): Promise<void>;
 }
 
 export function hasSupabase(): boolean {

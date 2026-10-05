@@ -42,6 +42,9 @@ export interface ResultsProps {
   failed: boolean;
   isUrl: boolean;
   urlPick: { source: SourceId; url: string } | null;
+  /** ค้น dochord ผ่าน search engine เปิดอยู่ไหม (null = ยังไม่รู้) */
+  webEnabled: boolean | null;
+  webLoading: boolean;
   onPicked?(): void;
   /** คีย์ลัดในหน้าต่างค้นหาบนคอม */
   selected?: { row: number; source: number };
@@ -49,7 +52,7 @@ export interface ResultsProps {
 }
 
 export default function SearchResults(props: ResultsProps) {
-  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover } = props;
+  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover, webEnabled, webLoading } = props;
   const { current, pick, openInChordTab } = useRoomCtx();
   const [busy, setBusy] = useState<string | null>(null);
   const [pastedTitle, setPastedTitle] = useState("");
@@ -109,7 +112,9 @@ export default function SearchResults(props: ResultsProps) {
   const dochordRow = (
     <div className="flex flex-col gap-2 rounded-[18px] border-2 border-dashed border-edge bg-surface p-3.5">
       <div className="text-sm text-muted">
-        dochord ไม่เปิดให้ทำ index · ค้นบนเว็บเขาในแท็บใหม่ เจอเพลงแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้
+        {webEnabled
+          ? "ไม่เจอเพลงที่ต้องการ? ค้นบนเว็บ dochord ในแท็บใหม่ เจอแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้"
+          : "dochord ไม่เปิดให้ทำ index · ค้นบนเว็บเขาในแท็บใหม่ เจอเพลงแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้"}
       </div>
       <button
         type="button"
@@ -121,14 +126,16 @@ export default function SearchResults(props: ResultsProps) {
     </div>
   );
 
-  if (filter === "dochord") return dochordRow;
+  if (filter === "dochord" && !webEnabled) return dochordRow;
+  const anyLoading = loading || webLoading;
+  const where = filter === "dochord" ? "dochord" : webEnabled ? "ทั้ง 3 เว็บ" : "chordzaa และ chordtabs";
 
   return (
     <div className="flex flex-col gap-3" aria-busy={loading}>
       {failed && <p className="px-1 text-[15px] text-muted">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</p>}
-      {loading && hits.length === 0 && <p className="px-1 text-[15px] text-muted">กำลังค้นหา…</p>}
-      {!loading && !failed && hits.length === 0 && (
-        <p className="px-1 text-[15px] text-muted">ไม่พบ “{q}” ใน chordzaa และ chordtabs</p>
+      {anyLoading && hits.length === 0 && <p className="px-1 text-[15px] text-muted">กำลังค้นหา…</p>}
+      {!anyLoading && !failed && hits.length === 0 && (
+        <p className="px-1 text-[15px] text-muted">ไม่พบ “{q}” ใน{where}</p>
       )}
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {hits.map((hit, row) => {
@@ -177,6 +184,7 @@ export default function SearchResults(props: ResultsProps) {
           );
         })}
       </ul>
+      {webLoading && hits.length > 0 && <p className="m-0 px-1 text-sm text-muted">กำลังค้นใน dochord…</p>}
       {dochordRow}
     </div>
   );

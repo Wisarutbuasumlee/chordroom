@@ -169,6 +169,24 @@ export function supabaseStore(): Store {
       return urls;
     },
 
+    async songsByUrls(urls) {
+      if (!urls.length) return [];
+      const { data, error } = await db().from("songs").select("id, title, artist, source, url").in("url", urls);
+      if (error) throw error;
+      return (data ?? []) as SongRow[];
+    },
+
+    async takeWebSearch(q, limit) {
+      const { data, error } = await db().rpc("web_search_take", { query: q, lim: limit });
+      if (error) throw error;
+      return data === true;
+    },
+
+    async forgetWebSearch(q) {
+      const { error } = await db().from("web_search_queries").delete().eq("q", q);
+      if (error) throw error;
+    },
+
     async upsertSongs(rows) {
       if (!rows.length) return 0;
       const payload = rows.map((r) => ({

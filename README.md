@@ -35,6 +35,22 @@ npm run index -- --max 0        # ทั้งหมด (หยุดกลา�
 - Cron (`vercel.json`) เรียก `/api/cron/index` วันละครั้ง (แพ็กเกจ Hobby รันได้วันละครั้ง) แต่ละรอบเก็บเพลงใหม่ได้ราว 100–150 เพลง ใช้ `CRON_SECRET` ที่ตั้งไว้ใน Vercel
 - ถ้าจะย้ายไปใช้ Supabase โปรเจกต์อื่น: ใส่ `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL_NON_POOLING`, `CRON_SECRET` ตาม `.env.example`
 
+## ค้นเพลง dochord ผ่าน Brave Search (เตรียมไว้แล้ว ยังปิดอยู่)
+
+dochord บล็อกการเก็บ index จากบอต จึงค้นผ่าน search engine แทน (`ชื่อเพลง คอร์ด site:dochord.com`)
+
+**วิธีเปิดใช้**
+1. สมัคร https://api-dashboard.search.brave.com (ต้องผูกบัตร ได้เครดิตฟรีเดือนละ $5 ≈ 1,000 ครั้ง) แล้วตั้งวงเงินสูงสุดต่อเดือนใน dashboard ไว้ที่ $5
+2. ใน Vercel → Project `chordroom` → Settings → Environment Variables เพิ่ม `BRAVE_SEARCH_API_KEY` (Production) แล้ว Redeploy
+3. ตั้ง `BRAVE_MONTHLY_LIMIT` ได้ถ้าอยากเปลี่ยนจำนวนครั้งต่อเดือน (ค่าเริ่ม 900)
+
+**ระบบประหยัดโควตา**
+- ถาม Brave หลังพิมพ์หยุด ~0.9 วินาที แยกจากการค้นใน index ปกติ
+- คำที่เคยค้นแล้ว ไม่ถามซ้ำภายใน 30 วัน และเพลงที่เจอจะถูกเก็บลงตาราง `songs` ครั้งหน้าค้นเจอจาก index ทันที
+- นับจำนวนครั้งต่อเดือนในฐานข้อมูล (`web_search_take()` ใน `0002_web_search.sql`) ถึงเพดานแล้วหยุดถามเอง จนถึงเดือนถัดไป
+- ถ้า Brave ตอบไม่สำเร็จ (key ผิด / ถี่เกิน) จะใช้ผลที่เคยเก็บไว้แทน และคำนั้นจะลองใหม่ได้ครั้งหน้า
+- dochord เขียนชื่อเพลงกับศิลปินติดกันในหัวข้อหน้า (เช่น "ขอ LOMOSONIC") จึงแยกศิลปินออกมาไม่ได้
+
 ## สิ่งที่ทำแล้ว (สเปกข้อ 10)
 
 | ขั้น | สถานะ |

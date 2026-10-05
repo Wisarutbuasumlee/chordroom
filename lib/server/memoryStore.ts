@@ -13,6 +13,8 @@ interface MemState {
   roomSongs: Map<string, (RoomSong & { undone: boolean })[]>;
   songs: SongRow[] | null;
   nextId: number;
+  webQueries?: Map<string, number>;
+  webUsage?: Map<string, number>;
 }
 
 const SONGS_FILE = path.join(process.cwd(), "data", "songs.local.json");
@@ -110,6 +112,28 @@ export function memoryStore(): Store {
 
     async knownUrls(source) {
       return new Set(songs().filter((s) => s.source === source).map((s) => s.url));
+    },
+
+    async songsByUrls(urls) {
+      const set = new Set(urls);
+      return songs().filter((s) => set.has(s.url));
+    },
+
+    async takeWebSearch(q, limit) {
+      const queries = (state.webQueries ??= new Map());
+      const usage = (state.webUsage ??= new Map());
+      const last = queries.get(q);
+      if (last && Date.now() - last < 30 * 24 * 3600_000) return false;
+      const month = new Date().toISOString().slice(0, 7);
+      const used = usage.get(month) ?? 0;
+      if (used >= limit) return false;
+      usage.set(month, used + 1);
+      queries.set(q, Date.now());
+      return true;
+    },
+
+    async forgetWebSearch(q) {
+      state.webQueries?.delete(q);
     },
 
     async upsertSongs(rows) {
