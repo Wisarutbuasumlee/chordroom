@@ -59,6 +59,8 @@ export function parseTitle(source: SourceId, raw: string): ParsedTitle | null {
   switch (source) {
     // "คนกำลังเจ็บคอร์ด | คอร์ด คนกำลังเจ็บ Freshen"
     case "chordtabs": {
+      // หน้าเพลงที่ถูกลบจะพาไปหน้าแรก (ชื่อหน้า "chordtabs.in.th - คอร์ด ...") ไม่ใช่เพลง
+      if (!t.includes(" | ") || /chordtabs\.in\.th/i.test(t)) return null;
       const [left, right = ""] = t.split(" | ");
       const title = left.replace(/\s*คอร์ด\s*$/, "").trim();
       if (!title) return null;
@@ -68,6 +70,7 @@ export function parseTitle(source: SourceId, raw: string): ParsedTitle | null {
     }
     // "คอร์ดเพลง แอบหวัง - ANATOMY RABBIT (คอร์ด เนื้อเพลง) - Chordzaa.com"
     case "chordzaa": {
+      if (!/^คอร์ดเพลง/.test(t)) return null; // หน้าแรก/หน้าหมวด ไม่ใช่หน้าเพลง
       const body = t
         .replace(/\s*-\s*chordzaa\.com\s*$/i, "")
         .replace(/\s*\(คอร์ด[^)]*\)\s*$/, "")

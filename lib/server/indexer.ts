@@ -97,6 +97,62 @@ export interface IndexReport {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+interface Plan {
+  source: SourceId;
+  report: IndexReport;
+  pending: string[];
+}
+
+/** อ่าน robots.txt + sitemap ของเว็บหนึ่ง แล้วคืนรายการหน้าเพลงที่ยังไม่มีใน index (ใหม่สุดก่อน) */
+async function planSource(store: Store, source: SourceId, log: (m: string) => void): Promise<Plan> {
+  const report: IndexReport = { source, sitemapSongs: 0, alreadyIndexed: 0, fetched: 0, saved: 0, remaining: 0 };
+  const plan: Plan = { source, report, pending: [] };
+  const cfg = INDEXED_SOURCES[source];
+  if (!cfg) {
+    report.skippedReason = "ไม่ได้เปิดให้เก็บ index เว็บนี้";
+    return plan;
+  }
+
+  const robotsTxt = await fetchText(`${cfg.origin}/robots.txt`);
+  if (robotsTxt === null) {
+    report.skippedReason = "อ่าน robots.txt ไม่ได้ จึงไม่เก็บ";
+    return plan;
+  }
+  const robots = parseRobots(robotsTxt);
+  if (!allowed(robots, "/")) {
+    report.skippedReason = "robots.txt ไม่อนุญาต";
+    return plan;
+  }
+
+  const all = (await Promise.all(robots.sitemaps.map((s) => sitemapUrls(s)))).flat();
+  const songUrls = [
+    ...new Set(
+      all.filter((u) => {
+        try {
+          const p = new URL(u);
+          return p.origin === cfg.origin && cfg.songPath.test(p.pathname) && allowed(robots, p.pathname);
+        } catch {
+          return false;
+        }
+      }),
+    ),
+  ];
+  report.sitemapSongs = songUrls.length;
+
+  const known = await store.knownUrls(source);
+  plan.pending = songUrls
+    .filter((u) => !known.has(u))
+    // เรียงเลขหน้าใหม่สุดไปเก่าสุด (worker หยิบจากทั้งสองหัว)
+    .sort((a, b) => Number(b.match(/(\d+)\/$/)?.[1] ?? 0) - Number(a.match(/(\d+)\/$/)?.[1] ?? 0));
+  report.alreadyIndexed = songUrls.length - plan.pending.length;
+  log(`${source}: ${songUrls.length} เพลงใน sitemap · ยังไม่มีใน index ${plan.pending.length}`);
+  return plan;
+}
+
+/**
+ * เก็บทุกเว็บไปพร้อมกัน (ไม่ต้องรอเว็บแรกเสร็จ) · concurrency และ delayMs นับต่อเว็บ
+ * แต่ละเว็บจึงโดนเรียกช้าเท่าเดิม แค่ไม่ต้องรอคิวกัน
+ */
 export async function runIndex(opts: IndexOptions): Promise<IndexReport[]> {
   const {
     store,
@@ -108,74 +164,41 @@ export async function runIndex(opts: IndexOptions): Promise<IndexReport[]> {
     log = () => {},
   } = opts;
   const deadline = Date.now() + timeBudgetMs;
-  const reports: IndexReport[] = [];
 
-  for (const source of sources) {
-    const cfg = INDEXED_SOURCES[source];
-    const report: IndexReport = { source, sitemapSongs: 0, alreadyIndexed: 0, fetched: 0, saved: 0, remaining: 0 };
-    reports.push(report);
-    if (!cfg) {
-      report.skippedReason = "ไม่ได้เปิดให้เก็บ index เว็บนี้";
-      continue;
-    }
+  const plans: Plan[] = [];
+  for (const source of sources) plans.push(await planSource(store, source, log));
 
-    const robotsTxt = await fetchText(`${cfg.origin}/robots.txt`);
-    if (robotsTxt === null) {
-      report.skippedReason = "อ่าน robots.txt ไม่ได้ จึงไม่เก็บ";
-      continue;
-    }
-    const robots = parseRobots(robotsTxt);
-    if (!allowed(robots, "/")) {
-      report.skippedReason = "robots.txt ไม่อนุญาต";
-      continue;
-    }
-
-    const all = (await Promise.all(robots.sitemaps.map((s) => sitemapUrls(s)))).flat();
-    const songUrls = [
-      ...new Set(
-        all.filter((u) => {
-          try {
-            const p = new URL(u);
-            return p.origin === cfg.origin && cfg.songPath.test(p.pathname) && allowed(robots, p.pathname);
-          } catch {
-            return false;
-          }
-        }),
-      ),
-    ];
-    report.sitemapSongs = songUrls.length;
-
-    const known = await store.knownUrls(source);
-    const pending = songUrls
-      .filter((u) => !known.has(u))
-      // เลขหน้าใหม่กว่าก่อน = เพลงใหม่ได้เข้า index ก่อน
-      .sort((a, b) => Number(b.match(/(\d+)\/$/)?.[1] ?? 0) - Number(a.match(/(\d+)\/$/)?.[1] ?? 0));
-    report.alreadyIndexed = songUrls.length - pending.length;
-    log(`${source}: ${songUrls.length} เพลงใน sitemap · ยังไม่มีใน index ${pending.length}`);
-
-    const queue = pending.slice(0, maxPagesPerSource);
-    const batch: NewSong[] = [];
-    const flush = async () => {
-      if (!batch.length) return;
-      report.saved += await store.upsertSongs(batch.splice(0));
-    };
-
-    const worker = async () => {
-      while (queue.length && Date.now() < deadline) {
-        const url = queue.shift()!;
-        const raw = await fetchPageTitle(url);
-        report.fetched++;
-        const parsed = raw ? parseTitle(source, raw) : null;
-        if (parsed) batch.push({ ...parsed, source, url });
-        if (batch.length >= 50) await flush();
-        await sleep(delayMs);
-      }
-    };
-    await Promise.all(Array.from({ length: concurrency }, worker));
-    await flush();
-    report.remaining = pending.length - report.fetched;
-    log(`${source}: อ่าน ${report.fetched} หน้า · บันทึก ${report.saved} · เหลือ ${report.remaining}`);
-    if (Date.now() >= deadline) break;
-  }
-  return reports;
+  await Promise.all(
+    plans.map(async ({ source, report, pending }) => {
+      if (report.skippedReason) return;
+      // จำกัดจำนวนหน้า: เอาครึ่งหนึ่งจากฝั่งเพลงใหม่ อีกครึ่งจากฝั่งเพลงเก่า
+      const half = Math.ceil(maxPagesPerSource / 2);
+      const queue =
+        pending.length <= maxPagesPerSource
+          ? [...pending]
+          : [...pending.slice(0, half), ...pending.slice(pending.length - (maxPagesPerSource - half))];
+      const batch: NewSong[] = [];
+      const flush = async () => {
+        if (!batch.length) return;
+        report.saved += await store.upsertSongs(batch.splice(0));
+      };
+      // ตัวเลขคู่เก็บจากเพลงใหม่สุด ตัวเลขคี่เก็บจากเพลงเก่าสุด (เพลงคลาสสิกที่วงเล่นบ่อยจะได้ไม่ต้องรอนาน)
+      const worker = async (i: number) => {
+        while (queue.length && Date.now() < deadline) {
+          const url = (i % 2 === 0 ? queue.shift() : queue.pop())!;
+          const raw = await fetchPageTitle(url);
+          report.fetched++;
+          const parsed = raw ? parseTitle(source, raw) : null;
+          if (parsed) batch.push({ ...parsed, source, url });
+          if (batch.length >= 50) await flush();
+          await sleep(delayMs);
+        }
+      };
+      await Promise.all(Array.from({ length: concurrency }, (_, i) => worker(i)));
+      await flush();
+      report.remaining = pending.length - report.fetched;
+      log(`${source}: อ่าน ${report.fetched} หน้า · บันทึก ${report.saved} · เหลือ ${report.remaining}`);
+    }),
+  );
+  return plans.map((p) => p.report);
 }
