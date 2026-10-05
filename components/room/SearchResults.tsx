@@ -41,14 +41,19 @@ function nextResetLabel(): string {
   return next.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
 }
 
-/** ค้น dochord ผ่าน Brave ครบโควตาของเดือนแล้ว */
+/** ค้น dochord ผ่าน Brave ใช้ไม่ได้ชั่วคราว: ครบโควตาของเดือน หรือ Brave แจ้งว่าเครดิตหมด */
 function QuotaNotice({ quota }: { quota: WebQuota }) {
+  const retry = quota.retryAt
+    ? new Date(quota.retryAt).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+    : null;
   return (
     <div role="status" className="rounded-xl border-2 border-edge bg-hl px-3 py-2.5 text-sm text-on-hl">
-      <div className="font-bold">ค้นหาเพลงจาก dochord ใช้งานไม่ได้แล้วเดือนนี้</div>
+      <div className="font-bold">ค้นหาเพลงจาก dochord ใช้งานไม่ได้ชั่วคราว</div>
       <div>
-        ใช้ครบ {quota.limit.toLocaleString("th-TH")} ครั้งแล้ว · กลับมาใช้ได้วันที่ {nextResetLabel()} · ระหว่างนี้ยังเห็นเพลง dochord
-        ที่เคยค้นไว้ และวางลิงก์ dochord เองได้
+        {retry
+          ? `Brave แจ้งว่าเครดิตหมด · จะลองใหม่ ${retry}`
+          : `ใช้ครบ ${quota.limit.toLocaleString("th-TH")} ครั้งของเดือนนี้แล้ว · กลับมาใช้ได้วันที่ ${nextResetLabel()}`}{" "}
+        · ระหว่างนี้ยังเห็นเพลง dochord ที่เคยค้นไว้ และวางลิงก์ dochord เองได้
       </div>
     </div>
   );

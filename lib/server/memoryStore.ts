@@ -15,6 +15,7 @@ interface MemState {
   nextId: number;
   webQueries?: Map<string, number>;
   webUsage?: Map<string, number>;
+  webBlockedUntil?: { month: string; until: string };
 }
 
 const SONGS_FILE = path.join(process.cwd(), "data", "songs.local.json");
@@ -132,12 +133,14 @@ export function memoryStore(): Store {
       return true;
     },
 
-    async webSearchUsed() {
-      return state.webUsage?.get(new Date().toISOString().slice(0, 7)) ?? 0;
+    async webSearchState() {
+      const month = new Date().toISOString().slice(0, 7);
+      const blocked = state.webBlockedUntil?.month === month ? state.webBlockedUntil.until : null;
+      return { used: state.webUsage?.get(month) ?? 0, blockedUntil: blocked };
     },
 
-    async exhaustWebSearch(limit) {
-      (state.webUsage ??= new Map()).set(new Date().toISOString().slice(0, 7), limit);
+    async blockWebSearch(until) {
+      state.webBlockedUntil = { month: new Date().toISOString().slice(0, 7), until: until.toISOString() };
     },
 
     async forgetWebSearch(q) {

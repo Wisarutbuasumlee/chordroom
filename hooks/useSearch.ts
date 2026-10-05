@@ -6,8 +6,8 @@ import type { SearchHit, SourceId } from "@/lib/types";
 
 export type SourceFilter = SourceId | "all";
 
-/** ค้น dochord ผ่าน search engine ช้ากว่าและนับโควตา จึงรอให้พิมพ์หยุดนานกว่า */
-const WEB_DEBOUNCE_MS = 900;
+/** ค้น dochord ผ่าน search engine นับโควตา จึงรอให้พิมพ์หยุดนานกว่า (คำที่พิมพ์ค้างครึ่งทางจะได้ไม่ถูกนับ) */
+const WEB_DEBOUNCE_MS = 1500;
 
 /**
  * เซิร์ฟเวอร์ตั้ง BRAVE_SEARCH_API_KEY ไว้ไหม (จากคำตอบล่าสุด) · ใช้แค่เลือกข้อความบนหน้า
@@ -19,6 +19,8 @@ export interface WebQuota {
   used: number;
   limit: number;
   exhausted: boolean;
+  /** Brave แจ้งว่าเครดิตหมด: จะลองใหม่เวลานี้ · null = ครบโควตาของเรา รอวันที่ 1 */
+  retryAt: string | null;
 }
 
 export function useSearch(query: string, filter: SourceFilter) {
@@ -61,7 +63,10 @@ export function useSearch(query: string, filter: SourceFilter) {
     const ctrl = new AbortController();
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search/web?${new URLSearchParams({ q })}`, { signal: ctrl.signal });
+        // ตัวกรอง dochord = ตั้งใจหาใน dochord → ให้ถาม search engine แม้ index จะมีเพลง dochord อยู่แล้ว
+        const params = new URLSearchParams({ q });
+        if (filter === "dochord") params.set("force", "1");
+        const res = await fetch(`/api/search/web?${params}`, { signal: ctrl.signal });
         const body = await res.json();
         webEnabledCache = Boolean(body.enabled);
         setWebEnabled(webEnabledCache);
@@ -75,7 +80,7 @@ export function useSearch(query: string, filter: SourceFilter) {
       clearTimeout(t);
       ctrl.abort();
     };
-  }, [q, key, skipWeb]);
+  }, [q, key, filter, skipWeb]);
 
   const indexHits = !skip && result?.key === key ? result.hits : [];
   const webHits = !skipWeb && web?.key === key ? web.hits : [];

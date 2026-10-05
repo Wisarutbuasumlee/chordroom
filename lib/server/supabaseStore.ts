@@ -182,14 +182,23 @@ export function supabaseStore(): Store {
       return data === true;
     },
 
-    async webSearchUsed() {
-      const { data, error } = await db().from("web_search_usage").select("count").eq("month", usageMonth()).maybeSingle();
+    async webSearchState() {
+      const { data, error } = await db()
+        .from("web_search_usage")
+        .select("count, blocked_until")
+        .eq("month", usageMonth())
+        .maybeSingle();
       if (error) throw error;
-      return data?.count ?? 0;
+      return { used: data?.count ?? 0, blockedUntil: data?.blocked_until ?? null };
     },
 
-    async exhaustWebSearch(limit) {
-      const { error } = await db().from("web_search_usage").upsert({ month: usageMonth(), count: limit }, { onConflict: "month" });
+    async blockWebSearch(until) {
+      const month = usageMonth();
+      const { error: insErr } = await db()
+        .from("web_search_usage")
+        .upsert({ month }, { onConflict: "month", ignoreDuplicates: true });
+      if (insErr) throw insErr;
+      const { error } = await db().from("web_search_usage").update({ blocked_until: until.toISOString() }).eq("month", month);
       if (error) throw error;
     },
 
