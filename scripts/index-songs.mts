@@ -13,8 +13,9 @@
  */
 import { getStore } from "../lib/server/store";
 import { runIndex } from "../lib/server/indexer";
+import { alertOnce } from "../lib/server/alerts";
 import { notifyDiscord } from "../lib/server/notify";
-import { isSourceId } from "../lib/sources";
+import { isSourceId, SOURCE_BY_ID } from "../lib/sources";
 import type { SourceId } from "../lib/types";
 
 try {
@@ -54,6 +55,30 @@ const reports = await runIndex({
   log: (m) => console.log(m),
 });
 console.table(reports);
+
+// รันใน GitHub Actions: จดเวลารอบล่าสุดไว้ (Vercel ใช้ตรวจว่า GitHub หยุดรันไปหรือเปล่า)
+// และแจ้งเตือนถ้าเว็บต้นทางเริ่มบล็อกการเก็บ index (เรื่องเดิมแจ้งไม่เกินวันละครั้ง)
+if (process.env.GITHUB_ACTIONS) {
+  await store.setState("index_last_run", { at: new Date().toISOString() });
+  for (const r of reports) {
+    const host = SOURCE_BY_ID[r.source].host;
+    if (r.skippedReason) {
+      await alertOnce(store, `index:${r.source}:robots`, `🛑 **เก็บ index ของ ${host} ไม่ได้:** ${r.skippedReason}`);
+    } else if (r.sitemapSongs === 0) {
+      await alertOnce(
+        store,
+        `index:${r.source}:sitemap`,
+        `🛑 **อ่าน sitemap ของ ${host} ไม่ได้** (ได้ 0 หน้าเพลง) เว็บอาจเริ่มบล็อก หรือเปลี่ยนรูปแบบ sitemap`,
+      );
+    } else if (r.fetched >= 50 && r.failed / r.fetched > 0.2) {
+      await alertOnce(
+        store,
+        `index:${r.source}:failing`,
+        `⚠️ **${host} เริ่มดึงไม่สำเร็จ ${Math.round((r.failed / r.fetched) * 100)}%** (${r.failed} จาก ${r.fetched} หน้า) เว็บอาจเริ่มบล็อกการเก็บ index`,
+      );
+    }
+  }
+}
 
 // index ครบ (ทุกเว็บอ่านหน้าที่ค้างจนหมด) → แจ้งเตือนครั้งเดียว จำไว้ใน app_state
 // จำเฉพาะตอนส่งสำเร็จ: ถ้าตอนครบยังไม่ได้ตั้ง webhook (หรือส่งไม่ผ่าน) รอบหน้าจะส่งให้

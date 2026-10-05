@@ -183,6 +183,30 @@ export function supabaseStore(): Store {
       return count ?? 0;
     },
 
+    async latestSongUrl(source) {
+      const { data, error } = await db()
+        .from("songs")
+        .select("url")
+        .eq("source", source)
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.url ?? null;
+    },
+
+    async latestSongAt(source) {
+      const { data, error } = await db()
+        .from("songs")
+        .select("updated_at")
+        .eq("source", source)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.updated_at ?? null;
+    },
+
     async markSkipped(rows) {
       if (!rows.length) return;
       const { error } = await db().from("index_skips").upsert(rows, { onConflict: "url" });

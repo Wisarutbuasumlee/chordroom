@@ -129,6 +129,15 @@ export function memoryStore(): Store {
       return songs().filter((s) => s.source === source).length;
     },
 
+    async latestSongUrl(source) {
+      return songs().findLast((s) => s.source === source)?.url ?? null;
+    },
+
+    async latestSongAt(source) {
+      // ไฟล์ index บนเครื่องไม่ได้เก็บเวลา ถือว่าเพิ่งอัปเดต
+      return songs().some((s) => s.source === source) ? new Date().toISOString() : null;
+    },
+
     async markSkipped(rows) {
       const skips = (state.skips ??= new Map());
       for (const r of rows) skips.set(r.url, r.source);

@@ -23,6 +23,10 @@ export interface Store {
   knownUrls(source: SourceId): Promise<Set<string>>;
   markSkipped(rows: { url: string; source: SourceId; reason: string }[]): Promise<void>;
   countSongs(source: SourceId): Promise<number>;
+  /** หน้าเพลงล่าสุดใน index ของเว็บนี้ (ใช้ตรวจว่ายังฝังได้ไหม) */
+  latestSongUrl(source: SourceId): Promise<string | null>;
+  /** เวลาที่มีเพลงใหม่ของเว็บนี้เข้า index ล่าสุด */
+  latestSongAt(source: SourceId): Promise<string | null>;
   getState<T>(key: string): Promise<T | null>;
   setState(key: string, value: unknown): Promise<void>;
   upsertSongs(rows: NewSong[]): Promise<number>;

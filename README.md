@@ -33,6 +33,11 @@ npm run index -- --max 0        # ทั้งหมด (หยุดกลา�
   - GitHub ปิด scheduled workflow ของ repo public ถ้าไม่มีความเคลื่อนไหวใน repo 60 วัน (จะมีอีเมลเตือน กดเปิดใหม่ได้ในแท็บ Actions) ระหว่างนั้น Vercel Cron ด้านล่างยังเก็บเพลงใหม่ต่อ
   - หน้าใน sitemap ที่อ่านแล้วไม่ใช่หน้าเพลง (เช่น เพลงถูกลบ) จะถูกจำไว้ในตาราง `index_skips` ไม่ดึงซ้ำ · หน้าที่ดึงไม่ได้ชั่วคราวจะลองใหม่รอบหน้า
   - **แจ้งเข้า Discord:** ตั้ง secret `DISCORD_WEBHOOK_URL` (Discord → Edit Channel → Integrations → Webhooks → Copy Webhook URL) แล้วจะได้ข้อความตอน index ครบ (ครั้งเดียว จำไว้ใน `app_state`) และตอนรอบเก็บ index ล้มเหลว
+  - **แจ้งเตือนเว็บพัง (Discord):**
+    - เว็บคอร์ดเริ่มไม่ยอมให้ฝังหน้า (`X-Frame-Options` / CSP `frame-ancestors`) ตรวจวันละครั้งจาก Vercel Cron แจ้งตอนเปลี่ยนสถานะและตอนกลับมาปกติ · dochord ตรวจจากเซิร์ฟเวอร์ไม่ได้ (เจอหน้าตรวจบอตของ Cloudflare) จึงข้ามไป
+    - เว็บต้นทางเริ่มบล็อกการเก็บ index: ดึงไม่สำเร็จเกิน 20%, robots.txt ห้าม หรืออ่าน sitemap ไม่ได้ (ตรวจทุกรอบใน GitHub Actions เรื่องเดิมแจ้งไม่เกินวันละครั้ง)
+    - GitHub Actions ไม่ได้รัน หรือไม่มีเพลงใหม่เข้า index เกิน 3 วัน (ตรวจจาก Vercel เพราะถ้า GitHub หยุดก็เตือนตัวเองไม่ได้)
+    - ต้องตั้ง `DISCORD_WEBHOOK_URL` ทั้งใน GitHub secrets และ Vercel environment variables (ลิงก์เดียวกัน)
   - รันบ่อยแบบนี้ยังช่วยไม่ให้ Supabase แพ็กเกจฟรีถูกพักเพราะไม่มีการใช้งาน 7 วัน
 - Cron (`vercel.json`) เรียก `/api/cron/index` วันละครั้ง (แพ็กเกจ Hobby รันได้วันละครั้ง) แต่ละรอบเก็บเพลงใหม่ได้ราว 100–150 เพลง ใช้ `CRON_SECRET` ที่ตั้งไว้ใน Vercel
 - ถ้าจะย้ายไปใช้ Supabase โปรเจกต์อื่น: ใส่ `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL_NON_POOLING`, `CRON_SECRET` ตาม `.env.example`
