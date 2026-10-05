@@ -1,0 +1,188 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalize } from "../normalize";
+import type { Room, RoomSnapshot, RoomSong, SongRow, SourceId } from "../types";
+import { serviceKey, type Store } from "./store";
+
+interface RoomRow {
+  id: string;
+  code: string;
+  name: string;
+  created_at: string;
+}
+
+interface RoomSongRow {
+  id: number;
+  song_id: number | null;
+  source: SourceId;
+  url: string;
+  title: string;
+  artist: string | null;
+  opened_by: string;
+  opened_at: string;
+}
+
+const ROOM_SONG_COLS = "id, song_id, source, url, title, artist, opened_by, opened_at";
+
+function toRoom(r: RoomRow): Room {
+  return { id: r.id, code: r.code, name: r.name, createdAt: r.created_at };
+}
+
+function toRoomSong(r: RoomSongRow): RoomSong {
+  return {
+    id: r.id,
+    songId: r.song_id,
+    source: r.source,
+    url: r.url,
+    title: r.title,
+    artist: r.artist,
+    openedBy: r.opened_by,
+    openedAt: r.opened_at,
+  };
+}
+
+let client: SupabaseClient | null = null;
+
+function db(): SupabaseClient {
+  client ??= createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey()!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  return client;
+}
+
+async function roomByCode(code: string): Promise<RoomRow | null> {
+  const { data, error } = await db().from("rooms").select("id, code, name, created_at").eq("code", code).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function snapshot(room: RoomRow, historyLimit: number): Promise<RoomSnapshot> {
+  const { data, error } = await db()
+    .from("room_songs")
+    .select(ROOM_SONG_COLS)
+    .eq("room_id", room.id)
+    .is("undone_at", null)
+    .order("id", { ascending: false })
+    .limit(historyLimit);
+  if (error) throw error;
+  const history = (data ?? []).map(toRoomSong);
+  return { room: toRoom(room), current: history[0] ?? null, history };
+}
+
+export function supabaseStore(): Store {
+  return {
+    kind: "supabase",
+
+    async createRoom(code, name) {
+      const { data, error } = await db()
+        .from("rooms")
+        .insert({ code, name })
+        .select("id, code, name, created_at")
+        .single();
+      if (error) {
+        if (error.code === "23505") return null; // รหัสซ้ำ ให้สุ่มใหม่
+        throw error;
+      }
+      return toRoom(data);
+    },
+
+    async getSnapshot(code, historyLimit = 30) {
+      const room = await roomByCode(code);
+      return room ? snapshot(room, historyLimit) : null;
+    },
+
+    async setSong(code, pick, by) {
+      const room = await roomByCode(code);
+      if (!room) return null;
+      const { data, error } = await db()
+        .from("room_songs")
+        .insert({
+          room_id: room.id,
+          song_id: pick.songId,
+          source: pick.source,
+          url: pick.url,
+          title: pick.title,
+          artist: pick.artist,
+          opened_by: by,
+        })
+        .select(ROOM_SONG_COLS)
+        .single();
+      if (error) throw error;
+      return toRoomSong(data);
+    },
+
+    async undo(code) {
+      const room = await roomByCode(code);
+      if (!room) return null;
+      const { data: latest, error } = await db()
+        .from("room_songs")
+        .select("id")
+        .eq("room_id", room.id)
+        .is("undone_at", null)
+        .order("id", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (latest) {
+        const { error: upErr } = await db()
+          .from("room_songs")
+          .update({ undone_at: new Date().toISOString() })
+          .eq("id", latest.id);
+        if (upErr) throw upErr;
+      }
+      return snapshot(room, 30);
+    },
+
+    async searchSongs(q, source, limit) {
+      const { data, error } = await db().rpc("search_songs", {
+        q: normalize(q),
+        src: source,
+        lim: limit,
+      });
+      if (error) throw error;
+      return (data ?? []) as SongRow[];
+    },
+
+    async getSong(id) {
+      const { data, error } = await db()
+        .from("songs")
+        .select("id, title, artist, source, url")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as SongRow | null;
+    },
+
+    async knownUrls(source) {
+      const urls = new Set<string>();
+      const page = 1000;
+      for (let from = 0; ; from += page) {
+        const { data, error } = await db()
+          .from("songs")
+          .select("url")
+          .eq("source", source)
+          .order("id")
+          .range(from, from + page - 1);
+        if (error) throw error;
+        for (const r of data ?? []) urls.add(r.url);
+        if (!data || data.length < page) break;
+      }
+      return urls;
+    },
+
+    async upsertSongs(rows) {
+      if (!rows.length) return 0;
+      const payload = rows.map((r) => ({
+        title: r.title,
+        artist: r.artist,
+        source: r.source,
+        url: r.url,
+        normalized_title: normalize(r.title),
+        normalized_artist: normalize(r.artist),
+        updated_at: new Date().toISOString(),
+      }));
+      const { error } = await db().from("songs").upsert(payload, { onConflict: "url" });
+      if (error) throw error;
+      return payload.length;
+    },
+  };
+}

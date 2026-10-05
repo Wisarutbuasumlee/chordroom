@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens จากสเปกข้อ 7 · สว่างเป็นค่าเริ่ม ส่วน .dark สลับเป็นโหมดมืด */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --soft: #eef2ff;
+  --ink: #0f1a2b;
+  --muted: #4a5568;
+  --border: #0f1a2b;
+  --line: #e2e6ec;
+  --shadow: #0f1a2b;
+  --primary: #2d5bff;
+  --on-primary: #ffffff;
+  --hl: #ffd43b;
+  --on-hl: #0f1a2b;
+  --dim: #c9d0da;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0f1115;
+  --surface: #191c22;
+  --soft: #242a36;
+  --ink: #eceef2;
+  --muted: #a3a9b5;
+  --border: #3a404c;
+  --line: #262a33;
+  --shadow: #000000;
+  --primary: #6f8fff;
+  --on-primary: #0b0f1a;
+  --hl: #f2c94c;
+  --on-hl: #15130a;
+  --dim: #000000;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-soft: var(--soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-edge: var(--border);
+  --color-line: var(--line);
+  --color-shade: var(--shadow);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-hl: var(--hl);
+  --color-on-hl: var(--on-hl);
+  --color-dim: var(--dim);
+  --color-member-ink: #0f1a2b;
+
+  --font-sans: var(--font-noto-thai), system-ui, sans-serif;
+  --font-display: var(--font-prompt), var(--font-noto-thai), sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+
+  --shadow-hard-sm: 3px 3px 0 var(--shadow);
+  --shadow-hard: 5px 5px 0 var(--shadow);
+  --shadow-hard-lg: 6px 6px 0 var(--shadow);
+  --shadow-hard-xl: 8px 8px 0 var(--shadow);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sheet-in {
+    animation: sheet-in 180ms ease-out;
+  }
+  .pop-in {
+    animation: pop-in 140ms ease-out;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+}
