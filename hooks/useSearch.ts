@@ -15,6 +15,12 @@ const WEB_DEBOUNCE_MS = 900;
  */
 let webEnabledCache: boolean | null = null;
 
+export interface WebQuota {
+  used: number;
+  limit: number;
+  exhausted: boolean;
+}
+
 export function useSearch(query: string, filter: SourceFilter) {
   const q = query.trim();
   const isUrl = /^https?:\/\//i.test(q) || /^(www\.)?(dochord\.com|chordzaa\.com|chordtabs\.in\.th)\//i.test(q);
@@ -26,6 +32,7 @@ export function useSearch(query: string, filter: SourceFilter) {
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const [web, setWeb] = useState<{ key: string; hits: SearchHit[] } | null>(null);
   const [webEnabled, setWebEnabled] = useState<boolean | null>(webEnabledCache);
+  const [webQuota, setWebQuota] = useState<WebQuota | null>(null);
   const key = `${filter}|${q}`;
 
   useEffect(() => {
@@ -58,6 +65,7 @@ export function useSearch(query: string, filter: SourceFilter) {
         const body = await res.json();
         webEnabledCache = Boolean(body.enabled);
         setWebEnabled(webEnabledCache);
+        if (body.quota) setWebQuota(body.quota);
         setWeb({ key, hits: res.ok ? body.hits : [] });
       } catch {
         if (!ctrl.signal.aborted) setWeb({ key, hits: [] });
@@ -77,5 +85,5 @@ export function useSearch(query: string, filter: SourceFilter) {
 
   const loading = !skip && result?.key !== key && failedKey !== key;
   const webLoading = !skipWeb && webEnabled === true && web?.key !== key;
-  return { q, hits, loading, failed: !skip && failedKey === key, isUrl, urlPick, webEnabled, webLoading };
+  return { q, hits, loading, failed: !skip && failedKey === key, isUrl, urlPick, webEnabled, webLoading, webQuota };
 }

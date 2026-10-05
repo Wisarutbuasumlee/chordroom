@@ -132,6 +132,14 @@ export function memoryStore(): Store {
       return true;
     },
 
+    async webSearchUsed() {
+      return state.webUsage?.get(new Date().toISOString().slice(0, 7)) ?? 0;
+    },
+
+    async exhaustWebSearch(limit) {
+      (state.webUsage ??= new Map()).set(new Date().toISOString().slice(0, 7), limit);
+    },
+
     async forgetWebSearch(q) {
       state.webQueries?.delete(q);
     },

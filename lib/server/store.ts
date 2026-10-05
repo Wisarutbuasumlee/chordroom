@@ -26,6 +26,15 @@ export interface Store {
   takeWebSearch(qNormalized: string, limit: number): Promise<boolean>;
   /** search engine ตอบไม่สำเร็จ: ลบคำนี้ออกจากรายการที่ค้นแล้ว ครั้งหน้าจะได้ลองใหม่ */
   forgetWebSearch(qNormalized: string): Promise<void>;
+  /** ถาม search engine ไปแล้วกี่ครั้งในเดือนนี้ */
+  webSearchUsed(): Promise<number>;
+  /** search engine แจ้งว่าโควตาหมด: ตั้งยอดเดือนนี้ให้เต็ม จะได้หยุดถามจนถึงเดือนหน้า */
+  exhaustWebSearch(limit: number): Promise<void>;
+}
+
+/** เดือนปัจจุบันแบบ YYYY-MM (UTC) ตรงกับ web_search_take() ใน SQL */
+export function usageMonth(): string {
+  return new Date().toISOString().slice(0, 7);
 }
 
 export function hasSupabase(): boolean {

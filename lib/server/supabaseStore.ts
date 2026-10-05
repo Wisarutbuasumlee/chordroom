@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalize } from "../normalize";
 import type { Room, RoomSnapshot, RoomSong, SongRow, SourceId } from "../types";
-import { serviceKey, type Store } from "./store";
+import { serviceKey, usageMonth, type Store } from "./store";
 
 interface RoomRow {
   id: string;
@@ -180,6 +180,17 @@ export function supabaseStore(): Store {
       const { data, error } = await db().rpc("web_search_take", { query: q, lim: limit });
       if (error) throw error;
       return data === true;
+    },
+
+    async webSearchUsed() {
+      const { data, error } = await db().from("web_search_usage").select("count").eq("month", usageMonth()).maybeSingle();
+      if (error) throw error;
+      return data?.count ?? 0;
+    },
+
+    async exhaustWebSearch(limit) {
+      const { error } = await db().from("web_search_usage").upsert({ month: usageMonth(), count: limit }, { onConflict: "month" });
+      if (error) throw error;
     },
 
     async forgetWebSearch(q) {

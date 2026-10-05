@@ -1,11 +1,12 @@
-# เก็บ index เพลงอัตโนมัติ: ทุก 6 ชั่วโมง เก็บเพลงที่ยังไม่มีใน index (เพลงใหม่ก่อน) จนกว่าจะครบ
-# ครั้งแรกจะใช้ 2-3 รอบกว่าจะเก็บของเดิมครบ หลังจากนั้นแต่ละรอบเก็บแค่เพลงใหม่ ใช้เวลาไม่กี่นาที
+# เก็บ index เพลงอัตโนมัติ: ทุกชั่วโมง เก็บเพลงที่ยังไม่มีใน index (จากทั้งฝั่งเพลงใหม่และเพลงเก่า) จนกว่าจะครบ
+# รอบหนึ่งรันได้ถึง 5.5 ชม. ถ้ารอบก่อนยังไม่จบ รอบใหม่จะรอคิว (ไม่รันซ้อน) จึงเก็บต่อเนื่องจนครบ
+# เก็บครบแล้ว แต่ละรอบแค่อ่าน sitemap หาเพลงใหม่ ใช้เวลาไม่กี่นาที
 # ต้องตั้ง secrets: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 name: Index songs
 
 on:
   schedule:
-    - cron: "17 */6 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 # ไม่ให้สองรอบรันซ้อนกัน
@@ -31,4 +32,5 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: npm run index -- --max 0 --minutes 330
+        # 3 การเชื่อมต่อต่อเว็บ พักหน้าละ 0.4 วินาที (ราว 2-3 หน้า/วินาทีต่อเว็บ)
+        run: npm run index -- --max 0 --minutes 330 --concurrency 3 --delay 400

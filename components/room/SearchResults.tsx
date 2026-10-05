@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SourceFilter } from "@/hooks/useSearch";
+import type { SourceFilter, WebQuota } from "@/hooks/useSearch";
 import { dochordSearchUrl, SOURCE_BY_ID, SOURCES } from "@/lib/sources";
 import type { SearchHit, SourceId } from "@/lib/types";
 import { ExternalIcon, PasteIcon } from "../Icons";
@@ -34,6 +34,26 @@ export function FilterChips({ value, onChange }: { value: SourceFilter; onChange
   );
 }
 
+/** เดือนหน้า วันที่ 1 (โควตานับตามเดือน UTC) เช่น "1 พ.ย." */
+function nextResetLabel(): string {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return next.toLocaleDateString("th-TH", { day: "numeric", month: "short" });
+}
+
+/** ค้น dochord ผ่าน Brave ครบโควตาของเดือนแล้ว */
+function QuotaNotice({ quota }: { quota: WebQuota }) {
+  return (
+    <div role="status" className="rounded-xl border-2 border-edge bg-hl px-3 py-2.5 text-sm text-on-hl">
+      <div className="font-bold">ค้นหาเพลงจาก dochord ใช้งานไม่ได้แล้วเดือนนี้</div>
+      <div>
+        ใช้ครบ {quota.limit.toLocaleString("th-TH")} ครั้งแล้ว · กลับมาใช้ได้วันที่ {nextResetLabel()} · ระหว่างนี้ยังเห็นเพลง dochord
+        ที่เคยค้นไว้ และวางลิงก์ dochord เองได้
+      </div>
+    </div>
+  );
+}
+
 export interface ResultsProps {
   q: string;
   filter: SourceFilter;
@@ -45,6 +65,8 @@ export interface ResultsProps {
   /** ค้น dochord ผ่าน search engine เปิดอยู่ไหม (null = ยังไม่รู้) */
   webEnabled: boolean | null;
   webLoading: boolean;
+  /** โควตาค้น dochord ผ่าน Brave ของเดือนนี้ */
+  webQuota: WebQuota | null;
   onPicked?(): void;
   /** คีย์ลัดในหน้าต่างค้นหาบนคอม */
   selected?: { row: number; source: number };
@@ -52,7 +74,8 @@ export interface ResultsProps {
 }
 
 export default function SearchResults(props: ResultsProps) {
-  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover, webEnabled, webLoading } = props;
+  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover, webEnabled, webLoading, webQuota } = props;
+  const quotaOut = webEnabled && webQuota?.exhausted;
   const { current, pick, openInChordTab } = useRoomCtx();
   const [busy, setBusy] = useState<string | null>(null);
   const [pastedTitle, setPastedTitle] = useState("");
@@ -111,8 +134,9 @@ export default function SearchResults(props: ResultsProps) {
 
   const dochordRow = (
     <div className="flex flex-col gap-2 rounded-[18px] border-2 border-dashed border-edge bg-surface p-3.5">
+      {quotaOut && webQuota && <QuotaNotice quota={webQuota} />}
       <div className="text-sm text-muted">
-        {webEnabled
+        {webEnabled && !quotaOut
           ? "ไม่เจอเพลงที่ต้องการ? ค้นบนเว็บ dochord ในแท็บใหม่ เจอแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้"
           : "dochord ไม่เปิดให้ทำ index · ค้นบนเว็บเขาในแท็บใหม่ เจอเพลงแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้"}
       </div>

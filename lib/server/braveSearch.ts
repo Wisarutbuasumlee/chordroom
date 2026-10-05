@@ -4,7 +4,7 @@ import { decodeEntities, parseTitle } from "./titles";
 /**
  * ค้นเพลง dochord ผ่าน Brave Search API (`site:dochord.com`)
  * dochord ปิดทางเก็บ index จากบอต เราจึงค้นผ่าน search engine แทน และเก็บผลไว้ใน songs
- * เปิดใช้เมื่อตั้ง BRAVE_SEARCH_API_KEY · โควตาต่อเดือนตั้งด้วย BRAVE_MONTHLY_LIMIT (ค่าเริ่ม 900)
+ * เปิดใช้เมื่อตั้ง BRAVE_SEARCH_API_KEY · โควตาต่อเดือนตั้งด้วย BRAVE_MONTHLY_LIMIT (ค่าเริ่ม 1000 = เครดิตฟรี $5)
  */
 export function braveEnabled(): boolean {
   return Boolean(process.env.BRAVE_SEARCH_API_KEY);
@@ -12,7 +12,7 @@ export function braveEnabled(): boolean {
 
 export function braveMonthlyLimit(): number {
   const n = Number(process.env.BRAVE_MONTHLY_LIMIT);
-  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 900;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1000;
 }
 
 interface BraveResult {
@@ -36,9 +36,11 @@ export function parseBraveResults(json: unknown): NewSong[] {
   return [...songs.values()];
 }
 
-export async function braveSearchDochord(q: string): Promise<NewSong[] | null> {
+export type BraveOutcome = { status: "ok"; songs: NewSong[] } | { status: "quota" } | { status: "error" };
+
+export async function braveSearchDochord(q: string): Promise<BraveOutcome> {
   const key = process.env.BRAVE_SEARCH_API_KEY;
-  if (!key) return null;
+  if (!key) return { status: "error" };
   const params = new URLSearchParams({ q: `${q} คอร์ด site:dochord.com`, count: "20" });
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 6000);
@@ -47,10 +49,19 @@ export async function braveSearchDochord(q: string): Promise<NewSong[] | null> {
       headers: { accept: "application/json", "x-subscription-token": key },
       signal: ctrl.signal,
     });
-    if (!res.ok) return null; // 401 key ผิด · 429 ถี่เกิน/หมดโควตา → ใช้ผลที่เคยเก็บไว้แทน
-    return parseBraveResults(await res.json());
+    // 402 = เครดิตหมด · 429 ที่บอกว่าเกินโควตารายเดือน = หมดโควตา · อื่นๆ (key ผิด ถี่เกินชั่วคราว) = ลองใหม่ได้
+    if (res.status === 402) return { status: "quota" };
+    if (res.status === 429) {
+      const body = await res.text().catch(() => "");
+      // "rate limit" (ถี่เกินต่อวินาที) ไม่ใช่โควตาหมด
+      return /quota|monthly|credit|usage limit/i.test(body) && !/rate limit/i.test(body)
+        ? { status: "quota" }
+        : { status: "error" };
+    }
+    if (!res.ok) return { status: "error" };
+    return { status: "ok", songs: parseBraveResults(await res.json()) };
   } catch {
-    return null;
+    return { status: "error" };
   } finally {
     clearTimeout(timer);
   }
