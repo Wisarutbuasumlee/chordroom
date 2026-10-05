@@ -3,15 +3,17 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * phone  = มือถือ: เมนูล่าง 3 แท็บ
- * panel  = หน้าต่างแคบบนจอใหญ่: iPad Split View / Slide Over หรือหน้าต่างห้องแคบๆ บนคอม
- * desk   = จอกว้าง (ไอแพดเต็มจอ, คอม): แถบข้าง + พื้นที่หลัก
+ * หน้าห้องแบบหน้าเดียว (บอร์ด S-* ในไฟล์ handoff)
+ * phone    = S-Song: มือถือ/หน้าต่างแคบ แถบบน + กรอบคอร์ด + เมนูล่าง 3 แท็บ
+ * portrait = S-TPortrait: ไอแพดแนวตั้ง/จอกลาง แถบบน + กรอบคอร์ดเต็มจอ
+ * tablet   = S-Tablet: ไอแพดแนวนอน แถบข้างมีแท็บ ค้นหา/คนในห้อง/ประวัติ
+ * desk     = S-Desk: คอมจอกว้าง แถบข้างมีคนในห้อง+ประวัติ ค้นหาด้วย Ctrl+K
  */
-export type Layout = "phone" | "panel" | "desk";
+export type Layout = "phone" | "portrait" | "tablet" | "desk";
 
 export interface LayoutInfo {
   layout: Layout;
-  /** จอสัมผัส (ไอแพด/มือถือ) ไม่มีหน้าต่างลอย/คีย์ลัด */
+  /** จอสัมผัส (ไอแพด/มือถือ) ไม่มีคีย์ลัด */
   touch: boolean;
   isMac: boolean;
 }
@@ -20,9 +22,8 @@ let cached: LayoutInfo | null = null;
 
 function compute(): LayoutInfo {
   const w = window.innerWidth;
-  const shortSide = Math.min(screen.width, screen.height);
   const touch = matchMedia("(pointer: coarse)").matches;
-  const layout: Layout = w >= 768 ? "desk" : shortSide >= 700 ? "panel" : "phone";
+  const layout: Layout = w < 700 ? "phone" : w < 1000 ? "portrait" : w >= 1200 && !touch ? "desk" : "tablet";
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform) || /Mac OS X/.test(navigator.userAgent);
   const next = { layout, touch, isMac };
   if (!cached || cached.layout !== next.layout || cached.touch !== next.touch || cached.isMac !== next.isMac) {

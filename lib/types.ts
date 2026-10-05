@@ -49,4 +49,6 @@ export interface Member {
   clientId: string;
   name: string;
   color: string;
+  /** กำลังดูเพลงเดียวกับห้องอยู่ (เปิด "ติดตามห้อง") */
+  following: boolean;
 }

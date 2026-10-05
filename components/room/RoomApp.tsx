@@ -8,16 +8,16 @@ import { useNow } from "@/hooks/useNow";
 import { useRoom, type SongInput } from "@/hooks/useRoom";
 import { getClientId, loadProfile, saveLastRoom, type Profile } from "@/lib/profile";
 import { realtimeMode } from "@/lib/realtime";
-import type { Member } from "@/lib/types";
+import type { Member, RoomSong } from "@/lib/types";
 import InviteSheet from "./InviteSheet";
 import { RoomContext, type RoomCtx } from "./RoomContext";
-import { CompactRoom, DeskRoom } from "./RoomLayouts";
+import { DeskRoom, PhoneRoom, PortraitRoom, TabletRoom, type SideTab } from "./RoomLayouts";
 import SearchPalette from "./SearchPalette";
 
 /**
- * ห้อง = หน้าเดียวจบ: หน้าเว็บคอร์ดของเพลงปัจจุบัน + ค้นหา + คนในห้อง
- * ใครในห้องเลือกเพลง หน้าคอร์ดของทุกคนโหลดเพลงใหม่เอง
- * คอม/ไอแพด: แถบข้างซ้าย (พับได้) · มือถือ/หน้าต่างแคบ: แถบบน + หน้าคอร์ดเต็มจอ
+ * ห้อง = หน้าเดียวจบ (บอร์ด S-* ในไฟล์ handoff): หน้าเว็บคอร์ด + ค้นหา + คนในห้อง
+ * ใครในห้องเลือกเพลง หน้าคอร์ดของทุกคนที่เปิด "ติดตามห้อง" โหลดเพลงใหม่เอง
+ * ปิดติดตามห้อง = ค้างเพลงที่ดูอยู่ ห้องเปลี่ยนเพลงจะขึ้นแบนเนอร์ "ไปดูด้วย" แทน
  */
 export default function RoomApp({ code, openInvite = false }: { code: string; openInvite?: boolean }) {
   const router = useRouter();
@@ -28,6 +28,10 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   const [inviteOpen, setInviteOpen] = useState(openInvite);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  const [phoneTab, setPhoneTab] = useState<"song" | "search">("song");
+  const [sideTab, setSideTab] = useState<SideTab>("search");
+  const [following, setFollowingState] = useState(true);
+  const [held, setHeld] = useState<RoomSong | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; at: number } | null>(null);
 
   // ตัวตนเก็บในเครื่อง: ยังไม่มีชื่อ → ไปหน้าใส่ชื่อก่อน
@@ -46,9 +50,18 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   const snapshot = room.snapshot;
   const current = snapshot?.current ?? null;
 
+  const viewSong = following ? current : held;
+  const setFollowing = useCallback(
+    (v: boolean) => {
+      if (!v) setHeld(current);
+      setFollowingState(v);
+    },
+    [current],
+  );
+
   const me = useMemo<Member | null>(
-    () => (profile && clientId ? { clientId, name: profile.name, color: profile.color } : null),
-    [profile, clientId],
+    () => (profile && clientId ? { clientId, name: profile.name, color: profile.color, following } : null),
+    [profile, clientId, following],
   );
   const { track } = room;
   useEffect(() => {
@@ -61,10 +74,11 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   const toast = useCallback((text: string) => setToastMsg({ text, at: Date.now() }), []);
 
-  // คนอื่นเปลี่ยนเพลง/ย้อนเพลง: แจ้ง "เพลงใหม่ · ชื่อคนเปลี่ยน"
+  const layout = info?.layout;
+  // คนอื่นเปลี่ยนเพลง/ย้อนเพลง · จอใหญ่มีการ์ด "ต้น เปิด X ให้ทุกคน" แทนข้อความเปลี่ยนเพลง
   const lastEvent = room.lastEvent;
   const eventToast =
-    lastEvent && !lastEvent.self
+    lastEvent && !lastEvent.self && (lastEvent.kind === "undo" || layout === "phone")
       ? {
           text: lastEvent.kind === "set" ? `เพลงใหม่ · ${lastEvent.by} เปลี่ยน` : `${lastEvent.by} ย้อนไปเพลงก่อน`,
           at: lastEvent.at,
@@ -75,8 +89,12 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
     null,
   );
 
-  const desk = info?.layout === "desk";
-  const openSearch = useCallback(() => (desk ? setPaletteOpen(true) : setSearchSheetOpen(true)), [desk]);
+  const openSearch = useCallback(() => {
+    if (layout === "desk") setPaletteOpen(true);
+    else if (layout === "tablet") setSideTab("search");
+    else if (layout === "portrait") setSearchSheetOpen(true);
+    else setPhoneTab("search");
+  }, [layout]);
 
   // Ctrl/⌘ + K เปิดช่องค้นหา (ถ้าโฟกัสอยู่ในหน้าเว็บคอร์ด ปุ่มนี้มาไม่ถึงเรา ต้องคลิกนอกกรอบก่อน)
   useEffect(() => {
@@ -98,10 +116,12 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
         toast(r.error);
         return false;
       }
-      toast(`ส่งให้ทุกคนในห้องแล้ว · ${r.song.title}`);
+      // เลือกเพลงให้ห้อง = อยากดูเพลงนั้นด้วย → กลับมาติดตามห้อง
+      setFollowingState(true);
+      if (layout === "phone") toast(`ส่งให้ทุกคนในห้องแล้ว · ${r.song.title}`);
       return true;
     },
-    [setSong, toast],
+    [setSong, toast, layout],
   );
 
   const roomUndo = room.undo;
@@ -121,6 +141,9 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       connected: room.connected,
       lastEvent,
       info,
+      following,
+      setFollowing,
+      viewSong,
       pick,
       undo,
       openInChordTab: (url) => {
@@ -133,7 +156,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       openSearch,
       toast,
     };
-  }, [snapshot, me, info, code, current, room.members, room.connected, lastEvent, pick, undo, openSearch, toast]);
+  }, [snapshot, me, info, code, current, room.members, room.connected, lastEvent, following, setFollowing, viewSong, pick, undo, openSearch, toast]);
 
   if (room.status === "notfound") return <RoomMessage title="ไม่พบห้องนี้" body={`ไม่มีห้องรหัส ${code} หรือห้องถูกลบไปแล้ว`} />;
   if (room.status === "error" && !snapshot)
@@ -144,22 +167,29 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
     <RoomContext.Provider value={ctx}>
       <div className="flex h-dvh flex-col">
         {realtimeMode === "local" && <LocalModeBanner />}
-        {desk ? <DeskRoom /> : <CompactRoom searchOpen={searchSheetOpen} setSearchOpen={setSearchSheetOpen} />}
+        {layout === "desk" && <DeskRoom />}
+        {layout === "tablet" && <TabletRoom sideTab={sideTab} setSideTab={setSideTab} />}
+        {layout === "portrait" && <PortraitRoom searchOpen={searchSheetOpen} setSearchOpen={setSearchSheetOpen} />}
+        {layout === "phone" && <PhoneRoom tab={phoneTab} setTab={setPhoneTab} />}
       </div>
       <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <SearchPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-      <Toast toast={latestToast} />
+      {/* มือถือ: ไว้เหนือเมนูล่าง ไม่บังแถบ "เปิดเพลงนี้ให้ทุกคน" ด้านบน */}
+      <Toast toast={latestToast} bottom={layout === "phone"} />
     </RoomContext.Provider>
   );
 }
 
 // ---------- สถานะอื่นๆ ----------
 
-function Toast({ toast }: { toast: { text: string; at: number } | null }) {
+function Toast({ toast, bottom }: { toast: { text: string; at: number } | null; bottom: boolean }) {
   const now = useNow(1000);
   const msg = toast && now - toast.at < 4000 ? toast.text : null;
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-16 z-[60] flex justify-center px-4">
+    <div
+      aria-live="polite"
+      className={`pointer-events-none fixed inset-x-0 z-[60] flex justify-center px-4 ${bottom ? "bottom-28" : "top-16"}`}
+    >
       {msg && (
         <div className="pop-in rounded-full border-2 border-edge bg-hl px-4 py-2.5 text-sm font-bold text-on-hl shadow-hard-sm">
           {msg}

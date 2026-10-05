@@ -15,6 +15,11 @@ export interface RoomCtx {
   connected: boolean;
   lastEvent: RoomEvent | null;
   info: LayoutInfo;
+  /** เปิด "ติดตามห้อง" อยู่: หน้าคอร์ดเปลี่ยนตามเพลงของห้อง */
+  following: boolean;
+  setFollowing(v: boolean): void;
+  /** เพลงที่แสดงในกรอบคอร์ดของเรา (ติดตามห้อง = เพลงของห้อง · ไม่ติดตาม = เพลงที่ค้างไว้) */
+  viewSong: RoomSong | null;
   /** เลือกเพลงให้ทั้งห้อง · หน้าคอร์ดของทุกคน (รวมของเรา) เปลี่ยนตามเอง */
   pick(input: SongInput): Promise<boolean>;
   undo(): Promise<void>;

@@ -22,7 +22,6 @@ const KEYS = {
   profile: "chordroom:profile",
   lastRoom: "chordroom:lastRoom",
   sidebar: "chordroom:sidebar",
-  clientId: "chordroom:clientId",
 };
 
 function read<T>(key: string, storage: () => Storage = () => localStorage): T | null {
@@ -68,13 +67,16 @@ export function saveSidebarOpen(open: boolean) {
   write(KEYS.sidebar, open);
 }
 
-/** แยกแต่ละแท็บออกจากกันใน presence (คนเดียวเปิดสองเครื่องได้) */
+let pageClientId: string | null = null;
+
+/**
+ * แยกแต่ละแท็บออกจากกันใน presence (คนเดียวเปิดหลายแท็บ/หลายเครื่องได้)
+ * สุ่มใหม่ทุกครั้งที่โหลดหน้า ไม่เก็บใน sessionStorage เพราะเบราว์เซอร์คัดลอก sessionStorage
+ * ไปให้แท็บที่ "ทำสำเนาแท็บ" หรือเปิดจากหน้านี้ ทำให้สองแท็บกลายเป็นคนเดียวกัน
+ */
 export function getClientId(): string {
-  const existing = read<string>(KEYS.clientId, () => sessionStorage);
-  if (existing) return existing;
-  const id = crypto.randomUUID();
-  write(KEYS.clientId, id, () => sessionStorage);
-  return id;
+  pageClientId ??= crypto.randomUUID();
+  return pageClientId;
 }
 
 /** ตัวอักษรบนวงกลมสมาชิก: พยัญชนะตัวแรก (ข้ามสระนำ เ แ โ ใ ไ) */
