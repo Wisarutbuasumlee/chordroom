@@ -11,6 +11,7 @@
  * หยุดกลางทางได้ รอบหน้าจะทำต่อจากที่ค้าง
  * รันครบทุกเว็บ (ไม่ใส่ --source, --max 0) แล้วไม่มีหน้าค้าง → แจ้งเข้า Discord ครั้งเดียว (DISCORD_WEBHOOK_URL)
  */
+import { appendFileSync } from "node:fs";
 import { getStore } from "../lib/server/store";
 import { runIndex } from "../lib/server/indexer";
 import { alertOnce } from "../lib/server/alerts";
@@ -55,6 +56,12 @@ const reports = await runIndex({
   log: (m) => console.log(m),
 });
 console.table(reports);
+
+// บอก GitHub Actions ว่ายังเหลือหน้าที่ไม่ได้อ่านกี่หน้า (ถ้ายังเหลือ workflow จะสั่งรอบถัดไปต่อเอง)
+if (process.env.GITHUB_OUTPUT) {
+  const remaining = reports.reduce((n, r) => n + (r.skippedReason ? 0 : r.remaining), 0);
+  appendFileSync(process.env.GITHUB_OUTPUT, `remaining=${remaining}\n`);
+}
 
 // รันใน GitHub Actions: จดเวลารอบล่าสุดไว้ (Vercel ใช้ตรวจว่า GitHub หยุดรันไปหรือเปล่า)
 // และแจ้งเตือนถ้าเว็บต้นทางเริ่มบล็อกการเก็บ index (เรื่องเดิมแจ้งไม่เกินวันละครั้ง)

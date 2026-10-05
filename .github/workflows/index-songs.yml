@@ -1,5 +1,6 @@
 # เก็บ index เพลงอัตโนมัติ: ทุกชั่วโมง เก็บเพลงที่ยังไม่มีใน index (จากทั้งฝั่งเพลงใหม่และเพลงเก่า) จนกว่าจะครบ
-# รอบหนึ่งรันได้ถึง 5.5 ชม. ถ้ารอบก่อนยังไม่จบ รอบใหม่จะรอคิว (ไม่รันซ้อน) จึงเก็บต่อเนื่องจนครบ
+# รอบหนึ่งรันได้ถึง 5.5 ชม. (GitHub ให้ไม่เกิน 6 ชม.) ถ้าหมดเวลาแต่ยังเก็บไม่ครบ จะสั่งรอบถัดไปต่อเองทันที
+# ไม่ต้องรอตารางเวลา (schedule ของ GitHub บางทีดีเลย์/ไม่ทำงาน) · ถ้ารอบก่อนยังไม่จบ รอบใหม่จะรอคิว ไม่รันซ้อน
 # เก็บครบแล้ว แต่ละรอบแค่อ่าน sitemap หาเพลงใหม่ ใช้เวลาไม่กี่นาที
 # ต้องตั้ง secrets: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 # ไม่บังคับ: DISCORD_WEBHOOK_URL → แจ้งเข้า Discord ตอน index ครบ (ครั้งเดียว) และตอนรอบเก็บ index ล้มเหลว
@@ -17,6 +18,8 @@ concurrency:
 
 permissions:
   contents: read
+  # ให้รอบที่ยังเก็บไม่ครบสั่งรอบถัดไปได้ (workflow_dispatch)
+  actions: write
 
 jobs:
   index:
@@ -30,12 +33,20 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Index chordzaa + chordtabs
+        id: index
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         # 3 การเชื่อมต่อต่อเว็บ พักหน้าละ 0.4 วินาที (ราว 2-3 หน้า/วินาทีต่อเว็บ)
         run: npm run index -- --max 0 --minutes 330 --concurrency 3 --delay 400
+      - name: ยังเก็บไม่ครบ → สั่งรอบถัดไปต่อเลย
+        if: success() && steps.index.outputs.remaining != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "ยังเหลือ ${{ steps.index.outputs.remaining }} หน้า สั่งรอบถัดไป"
+          gh workflow run index-songs.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
       - name: แจ้ง Discord เมื่อรอบนี้ล้มเหลว
         if: failure()
         env:
