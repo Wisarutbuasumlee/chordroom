@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ค้นหา มือถือ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Noto Sans Thai', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 44px 16px 12px; display: flex; align-items: center; gap: 8px">
+    <div style="flex: 1; min-width: 0">
+      <div style="font-family: 'Prompt', sans-serif; font-size: 20px; font-weight: 700">ซ้อมวันเสาร์</div>
+      <div style="font-size: 12px; color: {{t.muted}}; font-family: 'JetBrains Mono', monospace">KX7-42Q · 3 คน</div>
+    </div>
+    <button onClick="{{toggle}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center; font-family: inherit; padding: 0"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if></button>
+    <a href="B-Invite.dc.html" aria-label="ชวนเพื่อน" style="width: 44px; height: 44px; border-radius: 50%; background: {{t.surface}}; border: 2px solid {{t.border}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"></path><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>
+    </a>
+  </header>
+
+  <div style="padding: 0 16px 12px; display: flex; flex-direction: column; gap: 12px">
+    <div style="position: relative; display: flex; align-items: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="position: absolute; left: 14px"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <label for="bq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">ค้นหาเพลงหรือศิลปิน</label>
+      <input id="bq" value="ทะเล" style="flex: 1; height: 54px; box-sizing: border-box; border-radius: 16px; border: 2px solid {{t.border}}; box-shadow: 3px 3px 0 {{t.shadow}}; background: {{t.surface}}; color: {{t.ink}}; padding: 0 16px 0 44px; font-family: inherit; font-size: 17px; font-weight: 500">
+    </div>
+    <div style="display: flex; gap: 8px; overflow-x: auto">
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.ink}}; color: {{t.bg}}; font-family: inherit; font-weight: 600; font-size: 14px; white-space: nowrap">ทุกเว็บ</button>
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-size: 14px; white-space: nowrap">dochord</button>
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-size: 14px; white-space: nowrap">chordzaa</button>
+      <button style="height: 36px; padding: 0 14px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-size: 14px; white-space: nowrap">chordtabs</button>
+    </div>
+  </div>
+
+  <main style="flex: 1; min-height: 0; overflow: hidden; padding: 0 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="padding: 14px; border-radius: 18px; background: {{t.surface}}; border: 2px solid {{t.border}}; display: flex; flex-direction: column; gap: 12px">
+      <div>
+        <div style="font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 600">ทะเลยามเย็น</div>
+        <div style="font-size: 13px; color: {{t.muted}}">ศิลปินตัวอย่าง A · พบใน 3 เว็บ · เปิดอยู่ในห้อง</div>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.primary}}; border: 2px solid {{t.border}}; color: {{t.onPrimary}}; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">dochord</a>
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.soft}}; border: 2px solid {{t.border}}; color: {{t.ink}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">chordzaa</a>
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.soft}}; border: 2px solid {{t.border}}; color: {{t.ink}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">chordtabs</a>
+      </div>
+    </div>
+    <div style="padding: 14px; border-radius: 18px; background: {{t.surface}}; border: 2px solid {{t.border}}; display: flex; flex-direction: column; gap: 12px">
+      <div>
+        <div style="font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 600">ทะเลใจ (อะคูสติก)</div>
+        <div style="font-size: 13px; color: {{t.muted}}">ศิลปินตัวอย่าง B · พบใน 2 เว็บ</div>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.soft}}; border: 2px solid {{t.border}}; color: {{t.ink}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">dochord</a>
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.soft}}; border: 2px solid {{t.border}}; color: {{t.ink}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">chordtabs</a>
+      </div>
+    </div>
+    <div style="padding: 14px; border-radius: 18px; background: {{t.surface}}; border: 2px solid {{t.border}}; display: flex; flex-direction: column; gap: 12px">
+      <div>
+        <div style="font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 600">คลื่นทะเลกับเธอ</div>
+        <div style="font-size: 13px; color: {{t.muted}}">ศิลปินตัวอย่าง C · พบใน 1 เว็บ</div>
+      </div>
+      <div style="display: flex; gap: 8px">
+        <a href="B-Song.dc.html" style="flex: 1; height: 44px; border-radius: 12px; background: {{t.soft}}; border: 2px solid {{t.border}}; color: {{t.ink}}; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">chordzaa</a>
+      </div>
+    </div>
+  </main>
+
+  <a href="B-Song.dc.html" style="margin: 10px 12px 0; padding: 10px 14px; border-radius: 16px; background: {{t.hl}}; border: 2px solid {{t.border}}; display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.onHl}}">
+    <span style="width: 9px; height: 9px; border-radius: 50%; background: {{t.onHl}}"></span>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-size: 12px; font-weight: 600">ห้องกำลังเปิด · โดย ต้น</div>
+      <div style="font-size: 15px; font-weight: 700">ทะเลยามเย็น · dochord</div>
+    </div>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+  </a>
+
+  <nav aria-label="เมนูหลัก" style="display: flex; margin-top: 10px; border-top: 2px solid {{t.border}}; background: {{t.surface}}; padding: 6px 8px 24px">
+    <a href="B-Song.dc.html" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.muted}}; font-size: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg>
+      เพลงตอนนี้
+    </a>
+    <a href="B-Search.dc.html" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.primary}}; font-size: 12px; font-weight: 700">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      ค้นหา
+    </a>
+    <a href="B-Invite.dc.html" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.muted}}; font-size: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"></path></svg>
+      คนในห้อง
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startDark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: !!props.startDark }; }
+  renderVals() {
+    const d = this.state.dark;
+    const t = d
+      ? { bg: '#0F1115', surface: '#191C22', soft: '#242A36', ink: '#ECEEF2', muted: '#A3A9B5', border: '#3A404C', line: '#262A33', shadow: '#000000', primary: '#6F8FFF', onPrimary: '#0B0F1A', hl: '#F2C94C', onHl: '#15130A', dim: '#000000', chrome: '#000000' }
+      : { bg: '#F3F5F8', surface: '#FFFFFF', soft: '#EEF2FF', ink: '#0F1A2B', muted: '#4A5568', border: '#0F1A2B', line: '#E2E6EC', shadow: '#0F1A2B', primary: '#2D5BFF', onPrimary: '#FFFFFF', hl: '#FFD43B', onHl: '#0F1A2B', dim: '#C9D0DA', chrome: '#0F1A2B' };
+    return { t: t, isDark: d, isLight: !d, toggle: () => this.setState({ dark: !d }), toggleLabel: d ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด' };
+  }
+}
+</script>
+</body>
+</html>

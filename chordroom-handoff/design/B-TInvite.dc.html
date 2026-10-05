@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>ชวนเพื่อน ไอแพด</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; background: {{t.dim}}; color: {{t.ink}}; font-family: 'Noto Sans Thai', system-ui, sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden">
+  <section aria-label="ชวนเพื่อนเข้าห้อง" style="width: 660px; box-sizing: border-box; border-radius: 26px; background: {{t.surface}}; border: 2px solid {{t.border}}; box-shadow: 8px 8px 0 {{t.shadow}}; padding: 26px 28px 28px; display: flex; flex-direction: column; gap: 22px">
+    <div style="display: flex; align-items: center; gap: 8px">
+      <h2 style="flex: 1; margin: 0; font-family: 'Prompt', sans-serif; font-size: 24px; font-weight: 700">ชวนเพื่อนเข้าห้อง</h2>
+      <button onClick="{{toggle}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center; font-family: inherit; padding: 0"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if></button>
+      <a href="B-Tablet.dc.html" aria-label="ปิด" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid {{t.border}}; display: flex; align-items: center; justify-content: center; color: {{t.ink}}; box-sizing: border-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+      </a>
+    </div>
+    <div style="display: flex; gap: 26px; align-items: center">
+      <div style="width: 190px; height: 190px; flex-shrink: 0; border-radius: 20px; background: #FFFFFF; color: #0F1A2B; border: 2px solid {{t.border}}; box-shadow: 5px 5px 0 {{t.shadow}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px">
+        <svg width="78" height="78" viewBox="0 0 24 24" fill="none" stroke="#0F1A2B" stroke-width="1.8"><rect x="4" y="4" width="6" height="6"></rect><rect x="14" y="4" width="6" height="6"></rect><rect x="4" y="14" width="6" height="6"></rect><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"></path></svg>
+        <span style="font-size: 12px; color: #4A5568">QR ของลิงก์ห้อง</span>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 16px">
+        <div>
+          <div style="font-size: 14px; color: {{t.muted}}">ให้เพื่อนสแกน หรือบอกรหัสห้อง</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 700; letter-spacing: 0.08em; padding-top: 4px"><span style="background: {{t.hl}}; color: {{t.onHl}}; padding: 0 10px; border-radius: 10px">KX7-42Q</span></div>
+        </div>
+        <div style="display: flex; gap: 10px">
+          <button style="flex: 1; height: 54px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-weight: 700; font-size: 15px">คัดลอกลิงก์</button>
+          <button style="flex: 1; height: 54px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.primary}}; color: {{t.onPrimary}}; font-family: inherit; font-weight: 700; font-size: 15px">แชร์ไป LINE</button>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 2px solid {{t.line}}">
+      <div style="display: flex">
+        <span style="width: 32px; height: 32px; border-radius: 50%; background: #6CB4FF; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">ต</span>
+        <span style="width: 32px; height: 32px; border-radius: 50%; background: #FF9E7A; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px">ม</span>
+        <span style="width: 32px; height: 32px; border-radius: 50%; background: #7FD6B0; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px">น</span>
+      </div>
+      <div style="font-size: 14px; color: {{t.muted}}">ต้น, มิว และคุณ อยู่ในห้องตอนนี้</div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startDark":{"editor":"boolean","default":false},"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: !!props.startDark }; }
+  renderVals() {
+    const d = this.state.dark;
+    const t = d
+      ? { bg: '#0F1115', surface: '#191C22', soft: '#242A36', ink: '#ECEEF2', muted: '#A3A9B5', border: '#3A404C', line: '#262A33', shadow: '#000000', primary: '#6F8FFF', onPrimary: '#0B0F1A', hl: '#F2C94C', onHl: '#15130A', dim: '#000000', chrome: '#000000' }
+      : { bg: '#F3F5F8', surface: '#FFFFFF', soft: '#EEF2FF', ink: '#0F1A2B', muted: '#4A5568', border: '#0F1A2B', line: '#E2E6EC', shadow: '#0F1A2B', primary: '#2D5BFF', onPrimary: '#FFFFFF', hl: '#FFD43B', onHl: '#0F1A2B', dim: '#C9D0DA', chrome: '#0F1A2B' };
+    return { t: t, isDark: d, isLight: !d, toggle: () => this.setState({ dark: !d }), toggleLabel: d ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด' };
+  }
+}
+</script>
+</body>
+</html>

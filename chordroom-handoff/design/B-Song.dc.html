@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>เพลงตอนนี้ มือถือ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: {{t.bg}}; color: {{t.ink}}; font-family: 'Noto Sans Thai', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <header style="padding: 44px 16px 12px; display: flex; align-items: center; gap: 10px">
+    <div style="flex: 1; min-width: 0">
+      <div style="font-family: 'Prompt', sans-serif; font-size: 20px; font-weight: 700">ซ้อมวันเสาร์</div>
+      <div style="font-size: 12px; color: {{t.muted}}">3 คนอยู่ในห้อง</div>
+    </div>
+    <div style="display: flex">
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: #6CB4FF; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">ต</span>
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: #FF9E7A; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -9px">ม</span>
+      <span style="width: 32px; height: 32px; border-radius: 50%; background: #7FD6B0; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -9px">น</span>
+    </div>
+    <button onClick="{{toggle}}" aria-label="{{toggleLabel}}" style="width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; display: flex; align-items: center; justify-content: center; font-family: inherit; padding: 0"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if></button>
+  </header>
+
+  <main style="flex: 1; min-height: 0; padding: 4px 16px 12px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+    <section aria-label="เพลงที่ห้องกำลังเปิด" style="border-radius: 26px; background: {{t.surface}}; border: 2px solid {{t.border}}; box-shadow: 6px 6px 0 {{t.shadow}}; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <span style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: {{t.hl}}; color: {{t.onHl}}; border: 2px solid {{t.border}}">เพลงใหม่</span>
+        <span style="font-size: 13px; color: {{t.muted}}">มิว เปลี่ยนเมื่อ 10 วินาทีที่แล้ว</span>
+      </div>
+      <div>
+        <h1 style="margin: 0; font-family: 'Prompt', sans-serif; font-size: 30px; line-height: 1.2; font-weight: 700">ฝนตกที่ปลายฟ้า</h1>
+        <div style="font-size: 15px; color: {{t.muted}}; padding-top: 4px">ศิลปินตัวอย่าง D · chordtabs.in.th</div>
+      </div>
+      <a href="https://chordtabs.in.th/" style="height: 62px; border-radius: 999px; background: {{t.primary}}; border: 2px solid {{t.border}}; color: {{t.onPrimary}}; font-family: 'Prompt', sans-serif; font-size: 19px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg>
+        เปิดคอร์ดเพลงนี้
+      </a>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px">
+        <span style="font-size: 13px; color: {{t.muted}}">เปิดในแท็บ “คอร์ด” แท็บเดิมทุกครั้ง</span>
+        <button style="height: 40px; padding: 0 12px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-size: 13px; font-weight: 700">เพลงก่อน</button>
+      </div>
+    </section>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: {{t.soft}}; border: 2px dashed {{t.primary}}">
+      <div style="display: flex; gap: 4px; flex-shrink: 0">
+        <span style="width: 20px; height: 28px; border-radius: 5px; border: 2px solid {{t.primary}}; background: {{t.surface}}"></span>
+        <span style="width: 20px; height: 28px; border-radius: 5px; border: 2px solid {{t.border}}; background: {{t.surface}}"></span>
+      </div>
+      <div style="font-size: 13px; line-height: 1.5">ใช้แค่ 2 แท็บ: แท็บนี้ไว้เลือกเพลง แท็บ “คอร์ด” ไว้อ่าน</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-size: 13px; font-weight: 600; color: {{t.muted}}">เปิดไปแล้วในห้องนี้</div>
+      <a href="https://www.dochord.com/" style="min-height: 54px; border-radius: 14px; padding: 8px 14px; display: flex; align-items: center; gap: 10px; text-decoration: none; color: {{t.ink}}; background: {{t.surface}}; border: 2px solid {{t.border}}; box-sizing: border-box">
+        <div style="flex: 1"><div style="font-size: 15px; font-weight: 700">ทะเลยามเย็น</div><div style="font-size: 12px; color: {{t.muted}}">dochord · ต้น · 6 นาทีที่แล้ว</div></div>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>
+      </a>
+    </div>
+  </main>
+
+  <nav aria-label="เมนูหลัก" style="display: flex; border-top: 2px solid {{t.border}}; background: {{t.surface}}; padding: 6px 8px 24px">
+    <a href="B-Song.dc.html" aria-current="page" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.primary}}; font-size: 12px; font-weight: 700">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg>
+      เพลงตอนนี้
+    </a>
+    <a href="B-Search.dc.html" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.muted}}; font-size: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      ค้นหา
+    </a>
+    <a href="B-Invite.dc.html" style="flex: 1; min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: {{t.muted}}; font-size: 12px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"></path></svg>
+      คนในห้อง
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startDark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: !!props.startDark }; }
+  renderVals() {
+    const d = this.state.dark;
+    const t = d
+      ? { bg: '#0F1115', surface: '#191C22', soft: '#242A36', ink: '#ECEEF2', muted: '#A3A9B5', border: '#3A404C', line: '#262A33', shadow: '#000000', primary: '#6F8FFF', onPrimary: '#0B0F1A', hl: '#F2C94C', onHl: '#15130A', dim: '#000000', chrome: '#000000' }
+      : { bg: '#F3F5F8', surface: '#FFFFFF', soft: '#EEF2FF', ink: '#0F1A2B', muted: '#4A5568', border: '#0F1A2B', line: '#E2E6EC', shadow: '#0F1A2B', primary: '#2D5BFF', onPrimary: '#FFFFFF', hl: '#FFD43B', onHl: '#0F1A2B', dim: '#C9D0DA', chrome: '#0F1A2B' };
+    return { t: t, isDark: d, isLight: !d, toggle: () => this.setState({ dark: !d }), toggleLabel: d ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด' };
+  }
+}
+</script>
+</body>
+</html>

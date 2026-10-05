@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<title>หน้าต่างลอย คอมพิวเตอร์</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&amp;family=Noto+Sans+Thai:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: #DADDE1; color: {{t.ink}}; font-family: 'Noto Sans Thai', system-ui, sans-serif; position: relative; display: flex; flex-direction: column">
+  <div style="height: 44px; flex-shrink: 0; background: #E9EBEE; border-bottom: 1px solid #C9CDD3; display: flex; align-items: flex-end; gap: 4px; padding: 0 12px">
+    <div style="height: 34px; padding: 0 14px; border-radius: 10px 10px 0 0; background: #C9CDD3; color: #3D444D; font-size: 13px; display: flex; align-items: center">ChordRoom · ซ้อมวันเสาร์</div>
+    <div style="height: 36px; padding: 0 14px; border-radius: 10px 10px 0 0; background: #FFFFFF; color: #1F2328; font-size: 13px; font-weight: 600; display: flex; align-items: center">คอร์ด · ทะเลยามเย็น</div>
+  </div>
+  <div style="height: 40px; flex-shrink: 0; background: #FFFFFF; border-bottom: 1px solid #E1E4E8; display: flex; align-items: center; padding: 0 16px">
+    <div style="flex: 1; max-width: 560px; height: 28px; border-radius: 14px; background: #F1F3F5; display: flex; align-items: center; padding: 0 14px; font-size: 13px; color: #3D444D">dochord.com</div>
+  </div>
+  <section aria-label="หน้าเว็บต้นทางในแท็บคอร์ด" style="flex: 1; background: #FFFFFF; padding: 36px 48px; display: flex; flex-direction: column; gap: 18px; color: #1F2328">
+    <div style="font-size: 12px; color: #6E7781">หน้าเว็บต้นทางจริงในแท็บของเบราว์เซอร์ (ไม่ใช่ส่วนของเว็บเรา)</div>
+    <div><div style="font-size: 26px; font-weight: 700">[ชื่อเพลงจากเว็บต้นทาง]</div><div style="font-size: 14px; color: #57606A">[ศิลปิน] · Key G</div></div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #B4410C; white-space: pre">Intro:  G   D/F#   Em   C</div>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 620px"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #B4410C; white-space: pre">G               D/F#</div><div style="height: 13px; width: 86%; border-radius: 6px; background: #E4E7EB"></div></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 620px"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #B4410C; white-space: pre">Em              C</div><div style="height: 13px; width: 72%; border-radius: 6px; background: #E4E7EB"></div></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 620px"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #B4410C; white-space: pre">Am        D         G</div><div style="height: 13px; width: 90%; border-radius: 6px; background: #E4E7EB"></div></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; max-width: 620px"><div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; color: #B4410C; white-space: pre">C         D         Bm        Em</div><div style="height: 13px; width: 94%; border-radius: 6px; background: #E4E7EB"></div></div>
+  </section>
+
+  <section aria-label="หน้าต่างลอยของ ChordRoom" style="position: absolute; top: 104px; right: 24px; width: 340px; max-width: calc(100% - 48px); box-sizing: border-box; border-radius: 18px; background: {{t.bg}}; border: 2px solid {{t.border}}; box-shadow: 6px 6px 0 {{t.shadow}}; overflow: hidden; display: flex; flex-direction: column">
+    <div style="height: 40px; background: {{t.hl}}; color: {{t.onHl}}; border-bottom: 2px solid {{t.border}}; display: flex; align-items: center; padding: 0 6px 0 12px; font-size: 12px; font-weight: 700">
+      <span style="flex: 1">ChordRoom · หน้าต่างลอย</span>
+      <button onClick="{{toggle}}" aria-label="{{toggleLabel}}" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #0F1A2B; background: #FFFFFF; color: #0F1A2B; display: flex; align-items: center; justify-content: center; font-family: inherit; padding: 0"><sc-if value="{{isDark}}" hint-placeholder-val="{{false}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if><sc-if value="{{isLight}}" hint-placeholder-val="{{true}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if></button>
+    </div>
+    <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px">
+      <div style="position: relative; display: flex; align-items: center">
+        <label for="bfq" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">ค้นหาเพลง</label>
+        <input id="bfq" placeholder="ค้นหาเพลง" style="flex: 1; height: 46px; box-sizing: border-box; border-radius: 14px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; padding: 0 76px 0 14px; font-family: inherit; font-size: 15px">
+        <span style="position: absolute; right: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; border: 2px solid {{t.border}}; border-radius: 7px; padding: 1px 6px; background: {{t.surface}}">Ctrl K</span>
+      </div>
+      <div style="padding: 12px; border-radius: 14px; background: {{t.surface}}; border: 2px solid {{t.border}}; display: flex; flex-direction: column; gap: 3px">
+        <div style="font-size: 12px; font-weight: 600; color: {{t.muted}}">ห้องกำลังเปิด · แท็บคอร์ดตามอยู่</div>
+        <div style="font-family: 'Prompt', sans-serif; font-size: 17px; font-weight: 700">ทะเลยามเย็น</div>
+        <div style="font-size: 12px; color: {{t.muted}}">dochord · ต้น เปิดเมื่อสักครู่</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px">
+        <div style="display: flex; flex: 1">
+          <span style="width: 30px; height: 30px; border-radius: 50%; background: #6CB4FF; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">ต</span>
+          <span style="width: 30px; height: 30px; border-radius: 50%; background: #FF9E7A; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px">ม</span>
+          <span style="width: 30px; height: 30px; border-radius: 50%; background: #B7A3FF; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px">ป</span>
+          <span style="width: 30px; height: 30px; border-radius: 50%; background: #7FD6B0; color: #0F1A2B; border: 2px solid {{t.border}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-left: -8px">น</span>
+        </div>
+        <button style="height: 40px; padding: 0 14px; border-radius: 999px; border: 2px solid {{t.border}}; background: {{t.surface}}; color: {{t.ink}}; font-family: inherit; font-size: 13px; font-weight: 700">เพลงก่อน</button>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startDark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: !!props.startDark }; }
+  renderVals() {
+    const d = this.state.dark;
+    const t = d
+      ? { bg: '#0F1115', surface: '#191C22', soft: '#242A36', ink: '#ECEEF2', muted: '#A3A9B5', border: '#3A404C', line: '#262A33', shadow: '#000000', primary: '#6F8FFF', onPrimary: '#0B0F1A', hl: '#F2C94C', onHl: '#15130A', dim: '#000000', chrome: '#000000' }
+      : { bg: '#F3F5F8', surface: '#FFFFFF', soft: '#EEF2FF', ink: '#0F1A2B', muted: '#4A5568', border: '#0F1A2B', line: '#E2E6EC', shadow: '#0F1A2B', primary: '#2D5BFF', onPrimary: '#FFFFFF', hl: '#FFD43B', onHl: '#0F1A2B', dim: '#C9D0DA', chrome: '#0F1A2B' };
+    return { t: t, isDark: d, isLight: !d, toggle: () => this.setState({ dark: !d }), toggleLabel: d ? 'เปลี่ยนเป็นโหมดสว่าง' : 'เปลี่ยนเป็นโหมดมืด' };
+  }
+}
+</script>
+</body>
+</html>
