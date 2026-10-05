@@ -5,6 +5,7 @@ import type { Member } from "@/lib/types";
 import { ChevronRightIcon } from "../Icons";
 import { Avatar, SectionLabel } from "../ui";
 import { useRoomCtx } from "./RoomContext";
+import { hostOf } from "./SearchResults";
 
 /** คนในห้อง: ตัวเราขึ้นก่อน ตามด้วยคนอื่น */
 export function useSortedMembers(): Member[] {
@@ -53,7 +54,12 @@ export function HistoryList({ limit = 8 }: { limit?: number }) {
           <li key={h.id}>
             <button
               type="button"
-              onClick={() => void pick(h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined })}
+              onClick={(e) =>
+                void pick(h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined }, {
+                  url: h.url,
+                  host: hostOf(e),
+                })
+              }
               className="flex min-h-[54px] w-full items-center gap-2.5 rounded-[14px] border-2 border-edge bg-surface px-3.5 py-2 text-left text-ink"
             >
               <div className="min-w-0 flex-1">

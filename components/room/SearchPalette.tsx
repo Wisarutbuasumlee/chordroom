@@ -56,9 +56,13 @@ function Palette({ onClose }: { onClose(): void }) {
       move(selected.row, (selected.source + (e.key === "ArrowRight" ? 1 : n - 1)) % n);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (search.urlPick) void pick({ url: search.urlPick.url }).then((ok) => ok && onClose());
+      if (search.urlPick) {
+        const url = search.urlPick.url;
+        void pick({ url }, { url }).then((ok) => ok && onClose());
+        return;
+      }
       const s = hits[selected.row]?.sources[selected.source];
-      if (s) void pick({ songId: s.songId }).then((ok) => ok && onClose());
+      if (s) void pick({ songId: s.songId }, { url: s.url }).then((ok) => ok && onClose());
     }
   };
 

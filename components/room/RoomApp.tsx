@@ -7,7 +7,7 @@ import { useChordWindow } from "@/hooks/useChordWindow";
 import { useLayout } from "@/hooks/useLayout";
 import { useNow } from "@/hooks/useNow";
 import { useRoom, type SongInput } from "@/hooks/useRoom";
-import { followChord, openChord } from "@/lib/chordWindow";
+import { followChord, getChordState, openChord } from "@/lib/chordWindow";
 import {
   getClientId,
   loadProfile,
@@ -117,12 +117,23 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   const setSong = room.setSong;
   const pick = useCallback(
-    async (input: SongInput) => {
+    async (input: SongInput, open?: { url: string; host?: Window }) => {
+      // คอม/ไอแพด: เปิด/เปลี่ยนแท็บคอร์ดของเราทันที ก่อน await (ยังอยู่ในจังหวะที่ผู้ใช้กด)
+      // มือถือ: อยู่หน้าห้องต่อ ผู้ใช้กดปุ่มใหญ่ "เปิดคอร์ดเพลงนี้" เอง (สเปกข้อ 5)
+      if (open && info && info.layout !== "phone") {
+        const side = viewMode === "side" && info.layout === "desk" && !info.touch && !getChordState().alive;
+        const r = openChord(open.url, { side, host: open.host });
+        if (r.blocked) toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
+      }
       const r = await setSong(input);
-      if (!r.ok) toast(r.error);
-      return r.ok;
+      if (!r.ok) {
+        toast(r.error);
+        return false;
+      }
+      toast(`ส่งให้ทุกคนในห้องแล้ว · ${r.song.title}`);
+      return true;
     },
-    [setSong, toast],
+    [setSong, toast, info, viewMode],
   );
 
   const roomUndo = room.undo;

@@ -20,8 +20,11 @@ export interface RoomCtx {
   following: boolean;
   viewMode: ViewMode;
   setViewMode(v: ViewMode): void;
-  /** เลือกเพลงให้ทั้งห้อง */
-  pick(input: SongInput): Promise<boolean>;
+  /**
+   * เลือกเพลงให้ทั้งห้อง · ส่ง open มาด้วยเพื่อเปิดแท็บคอร์ดของเราทันทีในการกดครั้งเดียวกัน
+   * (เรียกจาก onClick/onKeyDown เท่านั้น เบราว์เซอร์ถึงจะยอมให้เปิดแท็บ) · host = หน้าต่างที่ถูกกด เช่นหน้าต่างลอย
+   */
+  pick(input: SongInput, open?: { url: string; host?: Window }): Promise<boolean>;
   undo(): Promise<void>;
   /** เปิดเพลงปัจจุบันในแท็บคอร์ด (เรียกจาก onClick) */
   openCurrent(host?: Window): void;
