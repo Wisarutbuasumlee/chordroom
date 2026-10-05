@@ -18,15 +18,19 @@ npm run dev          # http://localhost:3000
 
 ## ตั้งค่าใช้งานจริง
 
-1. **Supabase** (แพ็กเกจฟรี): สร้างโปรเจกต์ → SQL Editor → รัน [`supabase/migrations/0001_init.sql`](./supabase/migrations/0001_init.sql)
-2. คัดลอก `.env.example` เป็น `.env.local` แล้วใส่ค่า `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` และ `CRON_SECRET` (สุ่มยาวๆ)
-3. **เก็บ index ครั้งแรกจากเครื่องตัวเอง** (ใน sitemap มี chordtabs ~72,000 เพลง และ chordzaa ~11,700 เพลง ถ้าเก็บทั้งหมดใช้เวลาหลายชั่วโมง เพราะสคริปต์ตั้งใจดึงช้าๆ ไม่ให้เว็บต้นทางรับภาระหนัก)
-   ```bash
-   npm run index -- --max 5000      # เว็บละ 5000 เพลงล่าสุด
-   npm run index -- --max 0         # ทั้งหมด (หยุดกลางทางได้ รอบหน้าทำต่อจากที่ค้าง)
-   ```
-4. **Vercel**: Import repo → ใส่ env 4 ตัวเดียวกัน → Deploy · `vercel.json` ตั้ง Cron ให้เรียก `/api/cron/index` วันละครั้ง
-   (แพ็กเกจ Hobby ยอมให้ Cron รันได้วันละครั้ง แต่ละรอบเก็บเพลงใหม่ได้ประมาณ 100–150 เพลง ภายในเวลา 60 วินาที)
+โปรเจกต์ Vercel `chordroom` ต่อกับ repo นี้แล้ว push ขึ้น `main` เมื่อไหร่ Vercel จะ deploy ให้เอง
+ใช้ Supabase จาก Vercel Marketplace (ภูมิภาค Singapore) ซึ่ง Vercel ใส่ env ให้เองแล้ว และฟังก์ชันของ Vercel ก็ตั้งให้รันที่ Singapore (`sin1`) ใกล้ฐานข้อมูล
+
+```bash
+vercel env pull .env.local      # ดึง env (Supabase, Postgres) มาไว้ในเครื่อง
+npm run db:migrate              # สร้างตาราง/ฟังก์ชันค้นหา (รันซ้ำได้)
+npm run index -- --max 5000     # เก็บ index เว็บละ 5000 เพลงล่าสุด
+npm run index -- --max 0        # ทั้งหมด (หยุดกลางทางได้ รอบหน้าทำต่อจากที่ค้าง)
+```
+
+- ใน sitemap มี chordtabs ราว 72,000 เพลงและ chordzaa ราว 11,700 เพลง ถ้าเก็บทั้งหมดใช้เวลาหลายชั่วโมง เพราะสคริปต์ตั้งใจดึงช้าๆ ไม่ให้เว็บต้นทางรับภาระหนัก
+- Cron (`vercel.json`) เรียก `/api/cron/index` วันละครั้ง (แพ็กเกจ Hobby รันได้วันละครั้ง) แต่ละรอบเก็บเพลงใหม่ได้ราว 100–150 เพลง ใช้ `CRON_SECRET` ที่ตั้งไว้ใน Vercel
+- ถ้าจะย้ายไปใช้ Supabase โปรเจกต์อื่น: ใส่ `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL_NON_POOLING`, `CRON_SECRET` ตาม `.env.example`
 
 ## สิ่งที่ทำแล้ว (สเปกข้อ 10)
 
@@ -37,7 +41,7 @@ npm run dev          # http://localhost:3000
 | 3. แท็บคอร์ด + fallback + หน้าต่างลอย | ✅ ดูผลทดสอบด้านล่าง |
 | 4. Index เพลง + ค้นหา + Ctrl/⌘ K | ✅ chordzaa, chordtabs · dochord ดูหมายเหตุ |
 | 5. ชวนเพื่อน (QR, คัดลอก, LINE), ประวัติ, responsive | ✅ มือถือ / แผงแคบ (iPad Split View, Slide Over) / คอมและไอแพดเต็มจอ |
-| 6. Deploy Vercel + Cron | ⏳ เตรียมไฟล์ไว้แล้ว ต้องใช้บัญชี Vercel/Supabase ของเจ้าของ |
+| 6. Deploy Vercel + Cron | ✅ Vercel + Supabase (Marketplace) · Cron วันละครั้ง |
 
 ## ผลทดสอบตามสเปกข้อ 9 (5 ต.ค. 2026)
 

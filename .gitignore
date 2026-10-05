@@ -34,6 +34,7 @@ yarn-error.log*
 .env*
 
 # vercel
+# vercel
 .vercel
 
 # typescript
@@ -47,3 +48,6 @@ next-env.d.ts
 
 # playwright
 /.playwright-mcp/
+
+# vercel
+.vercel
