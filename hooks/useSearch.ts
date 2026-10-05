@@ -9,7 +9,10 @@ export type SourceFilter = SourceId | "all";
 /** ค้น dochord ผ่าน search engine ช้ากว่าและนับโควตา จึงรอให้พิมพ์หยุดนานกว่า */
 const WEB_DEBOUNCE_MS = 900;
 
-/** เซิร์ฟเวอร์ตั้ง BRAVE_SEARCH_API_KEY ไว้ไหม (รู้จากคำตอบครั้งแรก แล้วจำไว้ทั้งหน้า) */
+/**
+ * เซิร์ฟเวอร์ตั้ง BRAVE_SEARCH_API_KEY ไว้ไหม (จากคำตอบล่าสุด) · ใช้แค่เลือกข้อความบนหน้า
+ * ไม่ใช้ตัดสินว่าจะถามหรือไม่ เพราะถ้าเพิ่งใส่ key แล้ว deploy หน้าที่เปิดค้างไว้ต้องเห็นผลด้วย
+ */
 let webEnabledCache: boolean | null = null;
 
 export function useSearch(query: string, filter: SourceFilter) {
@@ -17,7 +20,7 @@ export function useSearch(query: string, filter: SourceFilter) {
   const isUrl = /^https?:\/\//i.test(q) || /^(www\.)?(dochord\.com|chordzaa\.com|chordtabs\.in\.th)\//i.test(q);
   const urlPick = isUrl ? sourceFromUrl(/^https?:/i.test(q) ? q : `https://${q}`) : null;
   const skip = !q || isUrl || filter === "dochord";
-  const skipWeb = !q || isUrl || (filter !== "all" && filter !== "dochord") || webEnabledCache === false;
+  const skipWeb = !q || isUrl || (filter !== "all" && filter !== "dochord");
 
   const [result, setResult] = useState<{ key: string; hits: SearchHit[] } | null>(null);
   const [failedKey, setFailedKey] = useState<string | null>(null);
@@ -73,6 +76,6 @@ export function useSearch(query: string, filter: SourceFilter) {
   const hits = [...indexHits, ...webHits.filter((h) => !h.sources.some((s) => seen.has(s.songId)))];
 
   const loading = !skip && result?.key !== key && failedKey !== key;
-  const webLoading = !skipWeb && webEnabled !== false && web?.key !== key;
+  const webLoading = !skipWeb && webEnabled === true && web?.key !== key;
   return { q, hits, loading, failed: !skip && failedKey === key, isUrl, urlPick, webEnabled, webLoading };
 }
