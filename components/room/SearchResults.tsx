@@ -120,7 +120,7 @@ export default function SearchResults(props: ResultsProps) {
   const dochordRow = (
     <div className="flex flex-col gap-2 rounded-[18px] border-2 border-dashed border-edge bg-surface p-3.5">
       <div className="text-sm text-muted">
-        dochord ไม่เปิดให้ทำ index · ค้นบนเว็บเขาในแท็บคอร์ด เจอเพลงแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้
+        dochord ไม่เปิดให้ทำ index · ค้นบนเว็บเขาในแท็บใหม่ เจอเพลงแล้วคัดลอกลิงก์มาวางในช่องค้นหานี้
       </div>
       <button
         type="button"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { openChord } from "@/lib/chordWindow";
+import { openViewer } from "@/lib/chordWindow";
 import { ColumnsIcon, PipIcon } from "../Icons";
 import { pipSupported } from "./FloatWindow";
 import { useRoomCtx } from "./RoomContext";
@@ -10,17 +10,13 @@ const noop = () => () => {};
 
 /** คอม: เลือกวิธีดูคอร์ดคู่กับห้อง (จำค่าที่เลือกไว้) */
 export default function ViewModeChooser({ onOpenFloat }: { onOpenFloat(): void }) {
-  const { viewMode, setViewMode, current, toast } = useRoomCtx();
+  const { viewMode, setViewMode, code, toast } = useRoomCtx();
   const canPip = useSyncExternalStore(noop, pipSupported, () => false);
   const [sideHint, setSideHint] = useState(false);
 
   const openSide = () => {
     setViewMode("side");
-    if (!current) {
-      toast("เลือกเพลงก่อน แล้วค่อยจัดหน้าต่าง");
-      return;
-    }
-    const r = openChord(current.url, { side: true });
+    const r = openViewer(`/r/${code}/view`, { side: true });
     if (r.blocked) toast("เบราว์เซอร์บล็อกหน้าต่างใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
     setSideHint(true);
   };

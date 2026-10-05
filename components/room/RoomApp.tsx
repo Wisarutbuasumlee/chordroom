@@ -7,7 +7,7 @@ import { useChordWindow } from "@/hooks/useChordWindow";
 import { useLayout } from "@/hooks/useLayout";
 import { useNow } from "@/hooks/useNow";
 import { useRoom, type SongInput } from "@/hooks/useRoom";
-import { followChord, getChordState, openChord } from "@/lib/chordWindow";
+import { getChordState, openViewer } from "@/lib/chordWindow";
 import {
   getClientId,
   loadProfile,
@@ -30,8 +30,18 @@ import { RoomContext, useRoomCtx, type RoomCtx } from "./RoomContext";
 import SearchPalette from "./SearchPalette";
 import SearchPanel from "./SearchPanel";
 import ViewModeChooser, { SplitViewTip } from "./ViewModeChooser";
+import ViewerRoom from "./ViewerRoom";
 
-export default function RoomApp({ code, openInvite = false }: { code: string; openInvite?: boolean }) {
+export default function RoomApp({
+  code,
+  openInvite = false,
+  mode = "room",
+}: {
+  code: string;
+  openInvite?: boolean;
+  /** room = หน้าห้อง (ค้นหา/คนในห้อง) · viewer = หน้าดูคอร์ด */
+  mode?: "room" | "viewer";
+}) {
   const router = useRouter();
   const info = useLayout();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -43,6 +53,8 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [phoneTab, setPhoneTab] = useState<"song" | "search">("song");
   const [pip, setPip] = useState<Window | null>(null);
+  const [viewerSearch, setViewerSearch] = useState(false);
+  const viewerPath = `/r/${code}/view`;
   const [toastMsg, setToastMsg] = useState<{ text: string; at: number } | null>(null);
 
   // ตัวตนเก็บในเครื่อง: ยังไม่มีชื่อ → ไปหน้าใส่ชื่อก่อน
@@ -61,14 +73,20 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   const snapshot = room.snapshot;
   const current = snapshot?.current ?? null;
-  const following = chord.alive && !!current && chord.url === current.url;
+  // หน้าดูคอร์ดตามห้องเองเสมอ · หน้าห้องถือว่าตามอยู่ถ้าแท็บดูคอร์ดที่เปิดไว้ยังไม่ถูกปิด
+  const following = mode === "viewer" || chord.alive;
 
   const me = useMemo<Member | null>(
     () =>
       profile && clientId
-        ? { clientId, name: profile.name, color: profile.color, following: chord.opened ? following : null }
+        ? {
+            clientId,
+            name: profile.name,
+            color: profile.color,
+            following: mode === "viewer" || chord.opened ? following : null,
+          }
         : null,
-    [profile, clientId, following, chord.opened],
+    [profile, clientId, following, chord.opened, mode],
   );
   const { track } = room;
   useEffect(() => {
@@ -78,12 +96,6 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   useEffect(() => {
     if (snapshot) saveLastRoom({ code: snapshot.room.code, name: snapshot.room.name });
   }, [snapshot]);
-
-  // มีคนเปลี่ยนเพลง: แท็บคอร์ดเปลี่ยนตามเองถ้าทำได้ (ข้อ 6)
-  const currentUrl = current?.url;
-  useEffect(() => {
-    if (currentUrl) followChord(currentUrl);
-  }, [currentUrl]);
 
   const toast = useCallback((text: string) => setToastMsg({ text, at: Date.now() }), []);
 
@@ -108,22 +120,39 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         if (layout === "desk") setPaletteOpen(true);
+        else if (mode === "viewer") setViewerSearch(true);
         else if (layout === "phone") setPhoneTab("search");
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [layout]);
+  }, [layout, mode]);
+
+  /**
+   * เปิดหน้าดูคอร์ด (จาก onClick) · มือถือ: ไปหน้าดูคอร์ดในแท็บนี้เลย ใช้แท็บเดียวจบ
+   * คอม/ไอแพด: เปิดเป็นแท็บ "คอร์ด" แยก (เปิดอยู่แล้วก็แค่สลับไป) · focus=false ไม่ดึงผู้ใช้ออกจากหน้าค้นหา
+   */
+  const showViewer = useCallback(
+    (opts: { host?: Window; focus?: boolean } = {}) => {
+      if (!info || mode === "viewer") return;
+      if (info.layout === "phone" && !opts.host) {
+        router.push(viewerPath);
+        return;
+      }
+      const side = viewMode === "side" && info.layout === "desk" && !info.touch && !getChordState().alive;
+      const r = openViewer(viewerPath, { side, host: opts.host, focus: opts.focus });
+      if (r.blocked) toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
+    },
+    [info, mode, router, viewerPath, viewMode, toast],
+  );
 
   const setSong = room.setSong;
   const pick = useCallback(
     async (input: SongInput, open?: { url: string; host?: Window }) => {
-      // คอม/ไอแพด: เปิด/เปลี่ยนแท็บคอร์ดของเราทันที ก่อน await (ยังอยู่ในจังหวะที่ผู้ใช้กด)
-      // มือถือ: อยู่หน้าห้องต่อ ผู้ใช้กดปุ่มใหญ่ "เปิดคอร์ดเพลงนี้" เอง (สเปกข้อ 5)
-      if (open && info && info.layout !== "phone") {
-        const side = viewMode === "side" && info.layout === "desk" && !info.touch && !getChordState().alive;
-        const r = openChord(open.url, { side, host: open.host });
-        if (r.blocked) toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
+      // คอม/ไอแพด: ยังไม่ได้เปิดแท็บดูคอร์ด → เปิดเลยในการกดครั้งนี้ (ก่อน await ยังอยู่ในจังหวะที่ผู้ใช้กด)
+      // เปิดอยู่แล้วไม่ต้องทำอะไร แท็บนั้นโหลดเพลงใหม่เอง · มือถือ: อยู่หน้าเดิม กดปุ่มใหญ่ไปหน้าดูคอร์ดเอง
+      if (open && info && info.layout !== "phone" && !getChordState().alive) {
+        showViewer({ host: open.host, focus: false });
       }
       const r = await setSong(input);
       if (!r.ok) {
@@ -133,7 +162,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       toast(`ส่งให้ทุกคนในห้องแล้ว · ${r.song.title}`);
       return true;
     },
-    [setSong, toast, info, viewMode],
+    [setSong, toast, info, showViewer],
   );
 
   const roomUndo = room.undo;
@@ -143,7 +172,6 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   const ctx = useMemo<RoomCtx | null>(() => {
     if (!snapshot || !me || !info) return null;
-    const side = viewMode === "side" && info.layout === "desk" && !info.touch;
     return {
       code,
       room: snapshot.room,
@@ -163,20 +191,20 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       },
       pick,
       undo,
-      openCurrent: (host) => {
-        if (!current) return;
-        const r = openChord(current.url, { side: side && !chord.alive, host });
-        if (r.blocked) toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
-      },
+      mode,
+      openCurrent: (host) => showViewer({ host }),
       openInChordTab: (url, host) => {
-        const r = openChord(url, { host });
-        if (r.blocked) toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
+        // หน้าค้นหาของเว็บคอร์ด (เช่น dochord) เปิดเป็นแท็บใหม่ธรรมดา ไม่ใช่เพลงของห้อง
+        if (!(host ?? window).open(url, "_blank", "noopener,noreferrer")) {
+          toast("เบราว์เซอร์บล็อกการเปิดแท็บใหม่ อนุญาตป๊อปอัปให้เว็บนี้ก่อน");
+        }
       },
       openInvite: () => setInviteOpen(true),
-      openSearch: () => (info.layout === "desk" ? setPaletteOpen(true) : setPhoneTab("search")),
+      openSearch: () =>
+        info.layout === "desk" ? setPaletteOpen(true) : mode === "viewer" ? setViewerSearch(true) : setPhoneTab("search"),
       toast,
     };
-  }, [snapshot, me, info, viewMode, code, current, room.members, room.connected, lastEvent, chord, following, pick, undo, toast]);
+  }, [snapshot, me, info, viewMode, code, current, room.members, room.connected, lastEvent, chord, following, pick, undo, toast, mode, showViewer]);
 
   const openFloat = useCallback(async () => {
     try {
@@ -196,7 +224,9 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   return (
     <RoomContext.Provider value={ctx}>
-      {ctx.info.layout === "phone" ? (
+      {mode === "viewer" ? (
+        <ViewerRoom searchOpen={viewerSearch} setSearchOpen={setViewerSearch} />
+      ) : ctx.info.layout === "phone" ? (
         // มือถือ: สูงพอดีจอ เมนูล่างติดขอบ
         <div className="flex h-dvh flex-col">
           {realtimeMode === "local" && <LocalModeBanner />}
@@ -205,14 +235,14 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       ) : (
         realtimeMode === "local" && <LocalModeBanner />
       )}
-      {ctx.info.layout === "panel" && <PanelRoom />}
-      {ctx.info.layout === "desk" && (
+      {mode === "room" && ctx.info.layout === "panel" && <PanelRoom />}
+      {mode === "room" && ctx.info.layout === "desk" && (
         <DeskRoom onSearch={() => setPaletteOpen(true)} onOpenFloat={openFloat} />
       )}
       <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} />
       <SearchPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {pip && <FloatWindow pip={pip} onClosed={closeFloat} />}
-      <Toast toast={latestToast} raised={ctx.info.layout === "phone"} />
+      <Toast toast={latestToast} raised={mode === "room" && ctx.info.layout === "phone"} />
     </RoomContext.Provider>
   );
 }
@@ -253,7 +283,7 @@ function PhoneRoom({ tab, setTab }: { tab: "song" | "search"; setTab(t: "song" |
                 <span className="h-7 w-5 rounded-[5px] border-2 border-primary bg-surface" />
                 <span className="h-7 w-5 rounded-[5px] border-2 border-edge bg-surface" />
               </div>
-              <div className="text-[13px] leading-normal">ใช้แค่ 2 แท็บ: แท็บนี้ไว้เลือกเพลง แท็บ “คอร์ด” ไว้อ่าน</div>
+              <div className="text-[13px] leading-normal">ในหน้าคอร์ดกดค้นหาเปลี่ยนเพลงได้เลย ใครเปลี่ยนเพลง หน้าคอร์ดก็เปลี่ยนตามเอง</div>
             </div>
             <HistoryList limit={5} />
           </>
@@ -311,7 +341,7 @@ function NavItem({ active, onClick, icon, label }: { active: boolean; onClick():
 // ---------- แผงแคบ: iPad Split View / Slide Over, หน้าต่างห้องแคบบนคอม (B-Tablet / B-TSlide) ----------
 
 function PanelRoom() {
-  const { room, code, current, following, chordOpened, openCurrent, openInvite } = useRoomCtx();
+  const { room, code, openInvite } = useRoomCtx();
   const members = useSortedMembers();
   const names = members.map((m, i) => (i === 0 ? "คุณ" : m.name));
   const namesText =
@@ -333,21 +363,6 @@ function PanelRoom() {
           <LinkIcon size={16} /> ชวน
         </button>
       </header>
-
-      {current && chordOpened && !following && (
-        <div className="flex flex-col gap-2.5 rounded-[18px] border-2 border-edge bg-hl p-3.5 text-on-hl" role="status">
-          <div className="text-sm">
-            {current.openedBy} เปลี่ยนเพลงของห้องเป็น <b>{current.title}</b>
-          </div>
-          <button
-            type="button"
-            onClick={() => openCurrent()}
-            className="h-11 rounded-full border-2 border-[#0F1A2B] bg-white font-bold text-[#0F1A2B]"
-          >
-            เปิดเพลงนี้
-          </button>
-        </div>
-      )}
 
       <NowPlayingCard variant="panel" />
       <SearchPanel compact />

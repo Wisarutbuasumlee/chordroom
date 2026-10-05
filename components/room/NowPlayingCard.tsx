@@ -69,7 +69,7 @@ export default function NowPlayingCard({ variant }: { variant: "phone" | "desk" 
             className="flex h-14 items-center justify-center gap-2.5 rounded-full border-2 border-edge bg-primary px-6 font-display text-lg font-semibold text-on-primary"
           >
             <MusicIcon size={20} />
-            เปิดคอร์ดในแท็บคอร์ด
+            {following ? "ไปที่แท็บคอร์ด" : "เปิดหน้าดูคอร์ด"}
           </button>
           {undoBtn("กลับไปเพลงก่อน", "h-12 px-5 text-[15px]")}
         </div>
@@ -136,7 +136,7 @@ export default function NowPlayingCard({ variant }: { variant: "phone" | "desk" 
         เปิดคอร์ดเพลงนี้
       </button>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[13px] text-muted">เปิดในแท็บ “คอร์ด” แท็บเดิมทุกครั้ง</span>
+        <span className="text-[13px] text-muted">หน้าคอร์ดเปลี่ยนตามห้องเอง</span>
         {undoBtn("เพลงก่อน", "h-10 shrink-0 px-3 text-[13px]")}
       </div>
     </section>
@@ -148,7 +148,7 @@ function FollowStatus({ following, opened }: { following: boolean; opened: boole
   return (
     <div className="flex items-center gap-2 text-[13px] font-semibold">
       <span className={`size-2.5 rounded-full border-2 border-edge ${following ? "bg-[#7FD6B0]" : "bg-hl"}`} />
-      {following ? "แท็บคอร์ดตามห้องอยู่" : "แท็บคอร์ดยังเป็นเพลงเก่า กดเปิดคอร์ดเพื่อตามห้อง"}
+      {following ? "แท็บคอร์ดเปิดอยู่ เปลี่ยนเพลงตามห้องเอง" : "แท็บคอร์ดถูกปิดไปแล้ว กดเปิดหน้าดูคอร์ดอีกครั้ง"}
     </div>
   );
 }

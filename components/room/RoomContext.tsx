@@ -19,6 +19,8 @@ export interface RoomCtx {
   chordOpened: boolean;
   following: boolean;
   viewMode: ViewMode;
+  /** room = หน้าห้อง · viewer = หน้าดูคอร์ด */
+  mode: "room" | "viewer";
   setViewMode(v: ViewMode): void;
   /**
    * เลือกเพลงให้ทั้งห้อง · ส่ง open มาด้วยเพื่อเปิดแท็บคอร์ดของเราทันทีในการกดครั้งเดียวกัน
@@ -26,9 +28,9 @@ export interface RoomCtx {
    */
   pick(input: SongInput, open?: { url: string; host?: Window }): Promise<boolean>;
   undo(): Promise<void>;
-  /** เปิดเพลงปัจจุบันในแท็บคอร์ด (เรียกจาก onClick) */
+  /** เปิดหน้าดูคอร์ด (เรียกจาก onClick) · host = หน้าต่างที่ถูกกด เช่นหน้าต่างลอย */
   openCurrent(host?: Window): void;
-  /** เปิดลิงก์ในแท็บคอร์ดโดยไม่เปลี่ยนเพลงของห้อง (เช่น หน้าค้นหาของ dochord) */
+  /** เปิดลิงก์เป็นแท็บใหม่โดยไม่เปลี่ยนเพลงของห้อง (เช่น หน้าค้นหาของ dochord) */
   openInChordTab(url: string, host?: Window): void;
   openInvite(): void;
   openSearch(): void;
