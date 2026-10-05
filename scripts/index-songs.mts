@@ -4,6 +4,7 @@
  *   npm run index                       ทุกเว็บ เว็บละ 200 หน้า
  *   npm run index -- --max 5000         เว็บละ 5000 หน้า
  *   npm run index -- --source chordtabs --max 0   (0 = ทั้งหมด)
+ *   npm run index -- --max 0 --minutes 330        หยุดเองเมื่อครบ 330 นาที (ใช้ใน GitHub Actions)
  *
  * มี SUPABASE ใน .env.local → เขียนลง Supabase · ไม่มี → data/songs.local.json
  * หยุดกลางทางได้ รอบหน้าจะทำต่อจากที่ค้าง
@@ -24,6 +25,7 @@ const flag = (name: string) => {
 };
 
 const max = Number(flag("max") ?? 200);
+const minutes = Number(flag("minutes") ?? 0);
 const sourceArg = flag("source");
 if (sourceArg && !isSourceId(sourceArg)) {
   console.error(`ไม่รู้จักเว็บ ${sourceArg}`);
@@ -31,12 +33,17 @@ if (sourceArg && !isSourceId(sourceArg)) {
 }
 
 const store = getStore();
+if (process.env.GITHUB_ACTIONS && store.kind !== "supabase") {
+  console.error("ไม่พบ NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY ใน GitHub secrets");
+  process.exit(1);
+}
 console.log(`เขียน index ลง: ${store.kind === "supabase" ? "Supabase" : "data/songs.local.json"}`);
 
 const reports = await runIndex({
   store,
   sources: sourceArg ? [sourceArg as SourceId] : undefined,
   maxPagesPerSource: max > 0 ? max : Infinity,
+  timeBudgetMs: minutes > 0 ? minutes * 60_000 : Infinity,
   log: (m) => console.log(m),
 });
 console.table(reports);

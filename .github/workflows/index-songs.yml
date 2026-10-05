@@ -1,0 +1,34 @@
+# เก็บ index เพลงอัตโนมัติ: ทุก 6 ชั่วโมง เก็บเพลงที่ยังไม่มีใน index (เพลงใหม่ก่อน) จนกว่าจะครบ
+# ครั้งแรกจะใช้ 2-3 รอบกว่าจะเก็บของเดิมครบ หลังจากนั้นแต่ละรอบเก็บแค่เพลงใหม่ ใช้เวลาไม่กี่นาที
+# ต้องตั้ง secrets: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+name: Index songs
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+# ไม่ให้สองรอบรันซ้อนกัน
+concurrency:
+  group: index-songs
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Index chordzaa + chordtabs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run index -- --max 0 --minutes 330
