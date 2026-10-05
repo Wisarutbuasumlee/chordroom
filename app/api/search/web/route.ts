@@ -23,8 +23,10 @@ export async function GET(req: NextRequest) {
     if (found?.length) {
       await store.upsertSongs(found);
       const byUrl = new Map((await store.songsByUrls(found.map((f) => f.url))).map((r) => [r.url, r]));
-      // เรียงตามลำดับที่ search engine ให้มา
-      rows = found.map((f) => byUrl.get(f.url)).filter((r): r is SongRow => !!r);
+      // ชื่อที่มีคำค้นอยู่จริงขึ้นก่อน (ตามลำดับของ search engine) ที่เหลือเป็นผลใกล้เคียง เก็บไว้แค่ 5
+      const all = found.map((f) => byUrl.get(f.url)).filter((r): r is SongRow => !!r);
+      const exact = all.filter((r) => normalize(r.title).includes(nq));
+      rows = [...exact, ...all.filter((r) => !exact.includes(r)).slice(0, 5)];
     }
   }
   if (!rows.length) rows = await store.searchSongs(q, "dochord", 20);
