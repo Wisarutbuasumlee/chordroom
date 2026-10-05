@@ -1,0 +1,15 @@
+# ไฟล์ที่ไม่ต้อง format
+.next/
+node_modules/
+data/
+.playwright-mcp/
+.vercel/
+package-lock.json
+next-env.d.ts
+# ไฟล์ออกแบบจาก canvas และ skill ที่ติดตั้งมา เก็บไว้ตามต้นฉบับ
+chordroom-handoff/
+.agents/
+.claude/
+skills-lock.json
+# สเปกต้นฉบับของเจ้าของโปรเจกต์ เก็บไว้ตามที่เขียน
+chordroom-spec.md

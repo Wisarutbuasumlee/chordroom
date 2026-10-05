@@ -115,7 +115,10 @@ export default function ProfileForm({
       </fieldset>
 
       {error && (
-        <p role="alert" className="m-0 rounded-xl border-2 border-edge bg-hl px-3 py-2 text-sm font-semibold text-on-hl">
+        <p
+          role="alert"
+          className="m-0 rounded-xl border-2 border-edge bg-hl px-3 py-2 text-sm font-semibold text-on-hl"
+        >
           {error}
         </p>
       )}

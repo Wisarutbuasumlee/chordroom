@@ -15,9 +15,7 @@ export const SOURCES: SourceInfo[] = [
   { id: "chordtabs", label: "chordtabs", host: "chordtabs.in.th", home: "https://chordtabs.in.th/", indexed: true },
 ];
 
-export const SOURCE_BY_ID: Record<SourceId, SourceInfo> = Object.fromEntries(
-  SOURCES.map((s) => [s.id, s]),
-) as Record<SourceId, SourceInfo>;
+export const SOURCE_BY_ID = Object.fromEntries(SOURCES.map((s) => [s.id, s])) as Record<SourceId, SourceInfo>;
 
 export function isSourceId(v: unknown): v is SourceId {
   return v === "dochord" || v === "chordzaa" || v === "chordtabs";

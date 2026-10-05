@@ -17,7 +17,6 @@ export interface LastRoom {
   name: string;
 }
 
-
 const KEYS = {
   profile: "chordroom:profile",
   lastRoom: "chordroom:lastRoom",

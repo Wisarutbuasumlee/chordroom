@@ -198,7 +198,10 @@ export function supabaseStore(): Store {
         .from("web_search_usage")
         .upsert({ month }, { onConflict: "month", ignoreDuplicates: true });
       if (insErr) throw insErr;
-      const { error } = await db().from("web_search_usage").update({ blocked_until: until.toISOString() }).eq("month", month);
+      const { error } = await db()
+        .from("web_search_usage")
+        .update({ blocked_until: until.toISOString() })
+        .eq("month", month);
       if (error) throw error;
     },
 

@@ -27,7 +27,8 @@ export function SongHeading({ size }: { size: "sm" | "md" | "lg" }) {
     );
   }
   const meta = [viewSong.artist, SOURCE_BY_ID[viewSong.source].host];
-  if (size !== "sm") meta.push(`${viewSong.openedBy} เปิด${size === "lg" ? "ให้ทุกคน" : ""}${sinceText(viewSong.openedAt, now)}`);
+  if (size !== "sm")
+    meta.push(`${viewSong.openedBy} เปิด${size === "lg" ? "ให้ทุกคน" : ""}${sinceText(viewSong.openedAt, now)}`);
   return (
     <div className="min-w-0 flex-1">
       <h1 className={`m-0 truncate font-display leading-tight font-bold ${title}`}>{viewSong.title}</h1>
@@ -69,7 +70,11 @@ export function SourceSwitcher() {
   const sources = useAlternates(viewSong);
   if (!viewSong || sources.length < 2) return null;
   return (
-    <div role="group" aria-label="เว็บอื่นที่มีเพลงนี้" className="flex rounded-full border-2 border-edge bg-surface p-[3px]">
+    <div
+      role="group"
+      aria-label="เว็บอื่นที่มีเพลงนี้"
+      className="flex rounded-full border-2 border-edge bg-surface p-[3px]"
+    >
       {sources.map((s) => {
         const on = s.url === viewSong.url;
         return (

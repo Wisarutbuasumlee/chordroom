@@ -63,7 +63,10 @@ async function sitemapUrls(url: string, depth = 0): Promise<string[]> {
   const body = await fetchText(url);
   if (!body) return [];
   if (!body.trimStart().startsWith("<")) {
-    return body.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    return body
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
   }
   const locs = [...body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]);
   if (/<sitemapindex/i.test(body) && depth < 2) {

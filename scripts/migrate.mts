@@ -19,7 +19,9 @@ if (!url) {
 }
 
 const dir = path.join(process.cwd(), "supabase", "migrations");
-const files = readdirSync(dir).filter((f) => f.endsWith(".sql")).sort();
+const files = readdirSync(dir)
+  .filter((f) => f.endsWith(".sql"))
+  .sort();
 
 // Supabase ใช้ใบรับรองของตัวเอง: เข้ารหัสการเชื่อมต่อแต่ไม่ตรวจ CA
 const connect = async () => {

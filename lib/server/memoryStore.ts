@@ -112,7 +112,11 @@ export function memoryStore(): Store {
     },
 
     async knownUrls(source) {
-      return new Set(songs().filter((s) => s.source === source).map((s) => s.url));
+      return new Set(
+        songs()
+          .filter((s) => s.source === source)
+          .map((s) => s.url),
+      );
     },
 
     async songsByUrls(urls) {

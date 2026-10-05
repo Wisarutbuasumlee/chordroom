@@ -91,15 +91,35 @@ export function PhoneRoom({ tab, setTab }: { tab: "song" | "search"; setTab(t: "
         aria-label="เมนูหลัก"
         className="flex border-t-2 border-edge bg-surface px-2 pt-1.5 pb-[max(12px,env(safe-area-inset-bottom))]"
       >
-        <NavItem active={tab === "song"} onClick={() => setTab("song")} icon={<MusicIcon size={22} />} label="เพลงตอนนี้" />
-        <NavItem active={tab === "search"} onClick={() => setTab("search")} icon={<SearchIcon size={22} />} label="ค้นหา" />
+        <NavItem
+          active={tab === "song"}
+          onClick={() => setTab("song")}
+          icon={<MusicIcon size={22} />}
+          label="เพลงตอนนี้"
+        />
+        <NavItem
+          active={tab === "search"}
+          onClick={() => setTab("search")}
+          icon={<SearchIcon size={22} />}
+          label="ค้นหา"
+        />
         <NavItem active={false} onClick={openInvite} icon={<UsersIcon size={22} />} label="คนในห้อง" />
       </nav>
     </div>
   );
 }
 
-function NavItem({ active, onClick, icon, label }: { active: boolean; onClick(): void; icon: React.ReactNode; label: string }) {
+function NavItem({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick(): void;
+  icon: React.ReactNode;
+  label: string;
+}) {
   return (
     <button
       type="button"
@@ -131,7 +151,13 @@ export function PortraitRoom({ searchOpen, setSearchOpen }: { searchOpen: boolea
           <SongTitleOnly />
         </div>
         <FollowToggle />
-        <button type="button" onClick={() => void undo()} disabled={history.length < 2} aria-label="กลับไปเพลงก่อน" className={`${roundBtn} disabled:opacity-40`}>
+        <button
+          type="button"
+          onClick={() => void undo()}
+          disabled={history.length < 2}
+          aria-label="กลับไปเพลงก่อน"
+          className={`${roundBtn} disabled:opacity-40`}
+        >
           <UndoIcon size={18} />
         </button>
         <button type="button" onClick={openSearch} aria-label="ค้นหาเพลง" className={roundBtn}>
@@ -155,7 +181,9 @@ export function PortraitRoom({ searchOpen, setSearchOpen }: { searchOpen: boolea
 function SongTitleOnly() {
   const { viewSong } = useRoomCtx();
   return (
-    <h1 className="m-0 truncate font-display text-[26px] leading-tight font-bold">{viewSong?.title ?? "ยังไม่มีเพลงในห้อง"}</h1>
+    <h1 className="m-0 truncate font-display text-[26px] leading-tight font-bold">
+      {viewSong?.title ?? "ยังไม่มีเพลงในห้อง"}
+    </h1>
   );
 }
 
@@ -168,7 +196,13 @@ function SearchSheet({ onClose }: { onClose(): void }) {
   }, [onClose]);
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-[8vh]">
-      <button type="button" aria-label="ปิดการค้นหา" tabIndex={-1} onClick={onClose} className="absolute inset-0 cursor-default bg-dim/80" />
+      <button
+        type="button"
+        aria-label="ปิดการค้นหา"
+        tabIndex={-1}
+        onClick={onClose}
+        className="absolute inset-0 cursor-default bg-dim/80"
+      />
       <section
         role="dialog"
         aria-modal="true"
@@ -236,7 +270,10 @@ export function TabletRoom({ sideTab, setSideTab }: { sideTab: SideTab; setSideT
           {sideTab === "history" && <HistoryList withCurrent title={false} limit={20} />}
         </div>
         <div className="flex items-center gap-2.5 border-t-2 border-edge px-4 pt-3 pb-4">
-          <AvatarStack people={members.filter((m) => m.following).map((m) => ({ key: m.clientId, name: m.name, color: m.color }))} size={30} />
+          <AvatarStack
+            people={members.filter((m) => m.following).map((m) => ({ key: m.clientId, name: m.name, color: m.color }))}
+            size={30}
+          />
           <WatchingTogether />
         </div>
       </aside>
@@ -290,7 +327,13 @@ export function DeskRoom() {
               <Logo size={36} textClass="text-lg" />
             </Link>
             <ThemeToggle />
-            <button type="button" onClick={() => toggle(false)} aria-label="พับแถบข้าง ให้หน้าคอร์ดกว้างขึ้น" title="พับแถบข้าง" className={roundBtn}>
+            <button
+              type="button"
+              onClick={() => toggle(false)}
+              aria-label="พับแถบข้าง ให้หน้าคอร์ดกว้างขึ้น"
+              title="พับแถบข้าง"
+              className={roundBtn}
+            >
               <ChevronRightIcon size={18} className="rotate-180" />
             </button>
           </div>

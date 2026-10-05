@@ -77,9 +77,7 @@ export function Logo({ size = 40, textClass = "text-[21px]" }: { size?: number; 
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-[22px] border-2 border-edge bg-surface shadow-hard ${className}`}>{children}</div>
-  );
+  return <div className={`rounded-[22px] border-2 border-edge bg-surface shadow-hard ${className}`}>{children}</div>;
 }
 
 export function SectionLabel({ children }: { children: ReactNode }) {

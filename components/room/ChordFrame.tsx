@@ -30,7 +30,9 @@ export default function ChordFrame({ variant }: { variant: "card" | "sheet" }) {
         className={`flex h-full flex-col items-center justify-center gap-4 bg-surface p-6 text-center ${shape}`}
       >
         <h1 className="m-0 font-display text-2xl font-bold">ยังไม่มีเพลงในห้อง</h1>
-        <p className="m-0 max-w-sm text-muted">ค้นหาเพลงแล้วแตะชื่อเว็บ หน้าคอร์ดของทุกคนในห้องจะเปลี่ยนเป็นเพลงนั้นทันที</p>
+        <p className="m-0 max-w-sm text-muted">
+          ค้นหาเพลงแล้วแตะชื่อเว็บ หน้าคอร์ดของทุกคนในห้องจะเปลี่ยนเป็นเพลงนั้นทันที
+        </p>
         <button
           type="button"
           onClick={openSearch}

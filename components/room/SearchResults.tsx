@@ -13,7 +13,7 @@ export function FilterChips({ value, onChange }: { value: SourceFilter; onChange
     ...SOURCES.map((s) => ({ id: s.id as SourceFilter, label: s.label })),
   ];
   return (
-    <div className="flex shrink-0 gap-2 overflow-x-auto [scrollbar-width:none]" role="group" aria-label="เลือกเว็บ">
+    <div className="flex shrink-0 [scrollbar-width:none] gap-2 overflow-x-auto" role="group" aria-label="เลือกเว็บ">
       {items.map((it) => {
         const on = it.id === value;
         return (
@@ -44,7 +44,12 @@ function nextResetLabel(): string {
 /** ค้น dochord ผ่าน Brave ใช้ไม่ได้ชั่วคราว: ครบโควตาของเดือน หรือ Brave แจ้งว่าเครดิตหมด */
 function QuotaNotice({ quota }: { quota: WebQuota }) {
   const retry = quota.retryAt
-    ? new Date(quota.retryAt).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+    ? new Date(quota.retryAt).toLocaleString("th-TH", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : null;
   return (
     <div role="status" className="rounded-xl border-2 border-edge bg-hl px-3 py-2.5 text-sm text-on-hl">
@@ -79,7 +84,8 @@ export interface ResultsProps {
 }
 
 export default function SearchResults(props: ResultsProps) {
-  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover, webEnabled, webLoading, webQuota } = props;
+  const { q, filter, hits, loading, failed, isUrl, urlPick, selected, onHover, webEnabled, webLoading, webQuota } =
+    props;
   const quotaOut = webEnabled && webQuota?.exhausted;
   const { current, pick, openInChordTab } = useRoomCtx();
   const [busy, setBusy] = useState<string | null>(null);
@@ -108,7 +114,10 @@ export default function SearchResults(props: ResultsProps) {
         </div>
         <div className="truncate font-mono text-xs text-muted">{urlPick.url}</div>
         <label className="flex flex-col gap-1 text-[13px] font-semibold">
-          ชื่อเพลง <span className="font-normal text-muted">(ไม่ใส่ก็ได้ เราจะลองอ่านจากหน้าเว็บ แต่ dochord มักไม่ให้อ่าน)</span>
+          ชื่อเพลง{" "}
+          <span className="font-normal text-muted">
+            (ไม่ใส่ก็ได้ เราจะลองอ่านจากหน้าเว็บ แต่ dochord มักไม่ให้อ่าน)
+          </span>
           <input
             value={pastedTitle}
             maxLength={120}
@@ -164,17 +173,17 @@ export default function SearchResults(props: ResultsProps) {
       {failed && <p className="px-1 text-[15px] text-muted">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</p>}
       {anyLoading && hits.length === 0 && <p className="px-1 text-[15px] text-muted">กำลังค้นหา…</p>}
       {!anyLoading && !failed && hits.length === 0 && (
-        <p className="px-1 text-[15px] text-muted">ไม่พบ “{q}” ใน{where}</p>
+        <p className="px-1 text-[15px] text-muted">
+          ไม่พบ “{q}” ใน{where}
+        </p>
       )}
       <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {hits.map((hit, row) => {
           const playing = hit.sources.some((s) => s.url === current?.url);
           const rowSelected = selected?.row === row;
-          const meta = [
-            hit.artist,
-            `พบใน ${hit.sources.length} เว็บ`,
-            playing ? "เปิดอยู่ในห้อง" : null,
-          ].filter(Boolean);
+          const meta = [hit.artist, `พบใน ${hit.sources.length} เว็บ`, playing ? "เปิดอยู่ในห้อง" : null].filter(
+            Boolean,
+          );
           return (
             <li
               key={hit.key}

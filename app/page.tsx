@@ -24,8 +24,8 @@ export default function Home() {
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-3">
             <h1 className="m-0 font-display text-4xl leading-[1.2] font-bold md:text-5xl">
-              เปิดคอร์ดเพลงเดียว{" "}
-              <span className="rounded-lg bg-hl px-2 whitespace-nowrap text-on-hl">ทั้งวง</span> เห็นพร้อมกัน
+              เปิดคอร์ดเพลงเดียว <span className="rounded-lg bg-hl px-2 whitespace-nowrap text-on-hl">ทั้งวง</span>{" "}
+              เห็นพร้อมกัน
             </h1>
             <p className="m-0 text-base leading-relaxed text-muted md:text-lg">
               ค้นคอร์ดจาก dochord, chordzaa และ chordtabs ในช่องเดียว ใครเลือกเพลง ทุกคนในห้องก็เห็นทันที
@@ -34,7 +34,10 @@ export default function Home() {
           <HomeActions />
           <div className="flex flex-wrap gap-2">
             {SOURCES.map((s) => (
-              <span key={s.id} className="rounded-full border-2 border-edge bg-surface px-3 py-1.5 text-[13px] font-semibold">
+              <span
+                key={s.id}
+                className="rounded-full border-2 border-edge bg-surface px-3 py-1.5 text-[13px] font-semibold"
+              >
                 {s.host}
               </span>
             ))}

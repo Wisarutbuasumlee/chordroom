@@ -156,11 +156,34 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       openSearch,
       toast,
     };
-  }, [snapshot, me, info, code, current, room.members, room.connected, lastEvent, following, setFollowing, viewSong, pick, undo, openSearch, toast]);
+  }, [
+    snapshot,
+    me,
+    info,
+    code,
+    current,
+    room.members,
+    room.connected,
+    lastEvent,
+    following,
+    setFollowing,
+    viewSong,
+    pick,
+    undo,
+    openSearch,
+    toast,
+  ]);
 
-  if (room.status === "notfound") return <RoomMessage title="ไม่พบห้องนี้" body={`ไม่มีห้องรหัส ${code} หรือห้องถูกลบไปแล้ว`} />;
+  if (room.status === "notfound")
+    return <RoomMessage title="ไม่พบห้องนี้" body={`ไม่มีห้องรหัส ${code} หรือห้องถูกลบไปแล้ว`} />;
   if (room.status === "error" && !snapshot)
-    return <RoomMessage title="เชื่อมต่อไม่ได้" body="ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง" retry={() => void room.refresh()} />;
+    return (
+      <RoomMessage
+        title="เชื่อมต่อไม่ได้"
+        body="ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่อีกครั้ง"
+        retry={() => void room.refresh()}
+      />
+    );
   if (!ctx) return <RoomLoading />;
 
   return (
@@ -222,7 +245,11 @@ function RoomMessage({ title, body, retry }: { title: string; body: string; retr
       <p className="m-0 text-muted">{body}</p>
       <div className="flex gap-3">
         {retry && (
-          <button type="button" onClick={retry} className="h-12 rounded-full border-2 border-edge bg-surface px-5 font-bold">
+          <button
+            type="button"
+            onClick={retry}
+            className="h-12 rounded-full border-2 border-edge bg-surface px-5 font-bold"
+          >
             ลองใหม่
           </button>
         )}

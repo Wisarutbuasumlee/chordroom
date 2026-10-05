@@ -17,7 +17,10 @@ export function useSortedMembers(): Member[] {
 export function WatchingTogether() {
   const list = useSortedMembers();
   const { following } = useRoomCtx();
-  const others = list.slice(1).filter((m) => m.following).map((m) => m.name);
+  const others = list
+    .slice(1)
+    .filter((m) => m.following)
+    .map((m) => m.name);
   const text = !following
     ? "คุณกำลังดูคนเดียว"
     : others.length
@@ -80,7 +83,9 @@ export function HistoryList({
                 disabled={isNow}
                 onClick={() => {
                   onPicked?.();
-                  void pick(h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined });
+                  void pick(
+                    h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined },
+                  );
                 }}
                 className={`flex min-h-[50px] w-full items-center gap-2.5 rounded-xl border-2 px-3 py-2 text-left text-ink ${
                   isNow ? "border-primary bg-soft" : "border-line bg-surface"

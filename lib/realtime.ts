@@ -34,8 +34,7 @@ export interface RoomChannel {
 }
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 export const realtimeMode: "supabase" | "local" = SUPABASE_URL && SUPABASE_KEY ? "supabase" : "local";
 
@@ -121,7 +120,10 @@ function localChannel(code: string, h: RoomChannelHandlers): RoomChannel {
   const emit = () => {
     const now = Date.now();
     for (const [id, v] of seen) if (now - v.at > 12_000) seen.delete(id);
-    h.onPresence([...(me ? [me] : []), ...[...seen.values()].map((v) => v.m).filter((m) => m.clientId !== me?.clientId)]);
+    h.onPresence([
+      ...(me ? [me] : []),
+      ...[...seen.values()].map((v) => v.m).filter((m) => m.clientId !== me?.clientId),
+    ]);
   };
   const announce = () => me && post({ kind: "presence", member: me });
 
