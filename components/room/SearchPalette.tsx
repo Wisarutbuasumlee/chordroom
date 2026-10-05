@@ -58,11 +58,11 @@ function Palette({ onClose }: { onClose(): void }) {
       e.preventDefault();
       if (search.urlPick) {
         const url = search.urlPick.url;
-        void pick({ url }, { url }).then((ok) => ok && onClose());
+        void pick({ url }).then((ok) => ok && onClose());
         return;
       }
       const s = hits[selected.row]?.sources[selected.source];
-      if (s) void pick({ songId: s.songId }, { url: s.url }).then((ok) => ok && onClose());
+      if (s) void pick({ songId: s.songId }).then((ok) => ok && onClose());
     }
   };
 

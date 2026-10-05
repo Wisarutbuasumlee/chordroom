@@ -17,12 +17,11 @@ export interface LastRoom {
   name: string;
 }
 
-export type ViewMode = "float" | "side";
 
 const KEYS = {
   profile: "chordroom:profile",
   lastRoom: "chordroom:lastRoom",
-  viewMode: "chordroom:viewMode",
+  sidebar: "chordroom:sidebar",
   clientId: "chordroom:clientId",
 };
 
@@ -60,13 +59,13 @@ export function saveLastRoom(r: LastRoom) {
   write(KEYS.lastRoom, r);
 }
 
-export function loadViewMode(): ViewMode | null {
-  const v = read<string>(KEYS.viewMode);
-  return v === "float" || v === "side" ? v : null;
+/** แถบข้างบนคอม: เปิดหรือพับไว้ (จำไว้ในเครื่อง) */
+export function loadSidebarOpen(): boolean {
+  return read<boolean>(KEYS.sidebar) ?? true;
 }
 
-export function saveViewMode(v: ViewMode) {
-  write(KEYS.viewMode, v);
+export function saveSidebarOpen(open: boolean) {
+  write(KEYS.sidebar, open);
 }
 
 /** แยกแต่ละแท็บออกจากกันใน presence (คนเดียวเปิดสองเครื่องได้) */

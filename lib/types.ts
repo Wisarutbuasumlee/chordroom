@@ -49,6 +49,4 @@ export interface Member {
   clientId: string;
   name: string;
   color: string;
-  /** แท็บคอร์ดของคนนี้ตามเพลงของห้องอยู่ไหม · null = ยังไม่ได้เปิดแท็บคอร์ด */
-  following: boolean | null;
 }

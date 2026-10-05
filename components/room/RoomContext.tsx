@@ -3,7 +3,6 @@
 import { createContext, useContext } from "react";
 import type { RoomEvent, SongInput } from "@/hooks/useRoom";
 import type { LayoutInfo } from "@/hooks/useLayout";
-import type { ViewMode } from "@/lib/profile";
 import type { Member, Room, RoomSong } from "@/lib/types";
 
 export interface RoomCtx {
@@ -16,22 +15,11 @@ export interface RoomCtx {
   connected: boolean;
   lastEvent: RoomEvent | null;
   info: LayoutInfo;
-  chordOpened: boolean;
-  following: boolean;
-  viewMode: ViewMode;
-  /** room = หน้าห้อง · viewer = หน้าดูคอร์ด */
-  mode: "room" | "viewer";
-  setViewMode(v: ViewMode): void;
-  /**
-   * เลือกเพลงให้ทั้งห้อง · ส่ง open มาด้วยเพื่อเปิดแท็บคอร์ดของเราทันทีในการกดครั้งเดียวกัน
-   * (เรียกจาก onClick/onKeyDown เท่านั้น เบราว์เซอร์ถึงจะยอมให้เปิดแท็บ) · host = หน้าต่างที่ถูกกด เช่นหน้าต่างลอย
-   */
-  pick(input: SongInput, open?: { url: string; host?: Window }): Promise<boolean>;
+  /** เลือกเพลงให้ทั้งห้อง · หน้าคอร์ดของทุกคน (รวมของเรา) เปลี่ยนตามเอง */
+  pick(input: SongInput): Promise<boolean>;
   undo(): Promise<void>;
-  /** เปิดหน้าดูคอร์ด (เรียกจาก onClick) · host = หน้าต่างที่ถูกกด เช่นหน้าต่างลอย */
-  openCurrent(host?: Window): void;
   /** เปิดลิงก์เป็นแท็บใหม่โดยไม่เปลี่ยนเพลงของห้อง (เช่น หน้าค้นหาของ dochord) */
-  openInChordTab(url: string, host?: Window): void;
+  openInChordTab(url: string): void;
   openInvite(): void;
   openSearch(): void;
   toast(msg: string): void;

@@ -7,11 +7,6 @@ import type { SearchHit, SourceId } from "@/lib/types";
 import { ExternalIcon, PasteIcon } from "../Icons";
 import { useRoomCtx } from "./RoomContext";
 
-/** หน้าต่างที่ถูกกด (หน้าหลักหรือหน้าต่างลอย) ต้องเป็นตัวเปิดแท็บ เพราะสิทธิ์เปิดแท็บผูกกับหน้าต่างนั้น */
-export function hostOf(e: { currentTarget: Element }): Window | undefined {
-  return e.currentTarget.ownerDocument.defaultView ?? undefined;
-}
-
 export function FilterChips({ value, onChange }: { value: SourceFilter; onChange(v: SourceFilter): void }) {
   const items: { id: SourceFilter; label: string }[] = [
     { id: "all", label: "ทุกเว็บ" },
@@ -59,13 +54,9 @@ export default function SearchResults(props: ResultsProps) {
   const [busy, setBusy] = useState<string | null>(null);
   const [pastedTitle, setPastedTitle] = useState("");
 
-  const choose = async (
-    key: string,
-    input: { songId: number } | { url: string; title?: string },
-    open: { url: string; host?: Window },
-  ) => {
+  const choose = async (key: string, input: { songId: number } | { url: string; title?: string }) => {
     setBusy(key);
-    const ok = await pick(input, open);
+    const ok = await pick(input);
     setBusy(null);
     if (ok) props.onPicked?.();
   };
@@ -98,12 +89,10 @@ export default function SearchResults(props: ResultsProps) {
         <button
           type="button"
           disabled={busy !== null}
-          onClick={(e) =>
-            choose(
-              "url",
-              { url: urlPick.url, ...(pastedTitle.trim() ? { title: pastedTitle.trim() } : {}) },
-              { url: urlPick.url, host: hostOf(e) },
-            ).then(() => setPastedTitle(""))
+          onClick={() =>
+            choose("url", { url: urlPick.url, ...(pastedTitle.trim() ? { title: pastedTitle.trim() } : {}) }).then(() =>
+              setPastedTitle(""),
+            )
           }
           className="h-12 rounded-full border-2 border-edge bg-primary font-display font-semibold text-on-primary disabled:opacity-60"
         >
@@ -172,7 +161,7 @@ export default function SearchResults(props: ResultsProps) {
                       key={s.source}
                       type="button"
                       disabled={busy !== null}
-                      onClick={(e) => choose(`${hit.key}:${s.source}`, { songId: s.songId }, { url: s.url, host: hostOf(e) })}
+                      onClick={() => choose(`${hit.key}:${s.source}`, { songId: s.songId })}
                       aria-label={`เปิด ${hit.title} จาก ${SOURCE_BY_ID[s.source].host} ให้ทั้งห้อง`}
                       className={`flex h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-xl border-2 border-edge text-sm disabled:opacity-60 ${
                         isCurrent || kbd ? "bg-primary font-bold text-on-primary" : "bg-soft font-semibold text-ink"

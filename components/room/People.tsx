@@ -5,7 +5,6 @@ import type { Member } from "@/lib/types";
 import { ChevronRightIcon } from "../Icons";
 import { Avatar, SectionLabel } from "../ui";
 import { useRoomCtx } from "./RoomContext";
-import { hostOf } from "./SearchResults";
 
 /** คนในห้อง: ตัวเราขึ้นก่อน ตามด้วยคนอื่น */
 export function useSortedMembers(): Member[] {
@@ -28,11 +27,6 @@ export function MemberList({ title = true }: { title?: boolean }) {
               {m.name}
               {m.clientId === me.clientId && <span className="font-normal text-muted"> (คุณ)</span>}
             </div>
-            {m.following === false && m.clientId !== me.clientId && (
-              <span className="text-xs text-muted" title="แท็บคอร์ดของคนนี้ยังไม่ตรงกับเพลงของห้อง">
-                ดูเพลงอื่นอยู่
-              </span>
-            )}
           </li>
         ))}
       </ul>
@@ -41,7 +35,7 @@ export function MemberList({ title = true }: { title?: boolean }) {
 }
 
 /** "เปิดไปแล้วในห้องนี้" · แตะเพื่อเปิดซ้ำให้ทั้งห้อง */
-export function HistoryList({ limit = 8 }: { limit?: number }) {
+export function HistoryList({ limit = 8, onPicked }: { limit?: number; onPicked?(): void }) {
   const { history, current, pick } = useRoomCtx();
   const now = useNow(30_000);
   const past = history.filter((h) => h.id !== current?.id).slice(0, limit);
@@ -54,12 +48,10 @@ export function HistoryList({ limit = 8 }: { limit?: number }) {
           <li key={h.id}>
             <button
               type="button"
-              onClick={(e) =>
-                void pick(h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined }, {
-                  url: h.url,
-                  host: hostOf(e),
-                })
-              }
+              onClick={() => {
+                onPicked?.();
+                void pick(h.songId ? { songId: h.songId } : { url: h.url, title: h.title, artist: h.artist ?? undefined });
+              }}
               className="flex min-h-[54px] w-full items-center gap-2.5 rounded-[14px] border-2 border-edge bg-surface px-3.5 py-2 text-left text-ink"
             >
               <div className="min-w-0 flex-1">
