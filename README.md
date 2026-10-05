@@ -31,6 +31,8 @@ npm run index -- --max 0        # ทั้งหมด (หยุดกลา�
 - ใน sitemap มี chordtabs ราว 72,000 เพลงและ chordzaa ราว 11,700 เพลง ถ้าเก็บทั้งหมดใช้เวลาหลายชั่วโมง เพราะสคริปต์ตั้งใจดึงช้าๆ ไม่ให้เว็บต้นทางรับภาระหนัก
 - **อัปเดตเองอัตโนมัติ:** GitHub Actions ([`.github/workflows/index-songs.yml`](./.github/workflows/index-songs.yml)) รันทุกชั่วโมง (ไม่รันซ้อน) เก็บเพลงที่ยังไม่มีใน index ทั้งสองเว็บพร้อมกัน จากฝั่งเพลงใหม่และเพลงเก่า รอบละไม่เกิน 5.5 ชั่วโมง หลังจากนั้นแต่ละรอบเก็บแค่เพลงใหม่ ใช้ secrets `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` สั่งรันเองได้ที่แท็บ Actions → Index songs → Run workflow
   - GitHub ปิด scheduled workflow ของ repo public ถ้าไม่มีความเคลื่อนไหวใน repo 60 วัน (จะมีอีเมลเตือน กดเปิดใหม่ได้ในแท็บ Actions) ระหว่างนั้น Vercel Cron ด้านล่างยังเก็บเพลงใหม่ต่อ
+  - หน้าใน sitemap ที่อ่านแล้วไม่ใช่หน้าเพลง (เช่น เพลงถูกลบ) จะถูกจำไว้ในตาราง `index_skips` ไม่ดึงซ้ำ · หน้าที่ดึงไม่ได้ชั่วคราวจะลองใหม่รอบหน้า
+  - **แจ้งเข้า Discord:** ตั้ง secret `DISCORD_WEBHOOK_URL` (Discord → Edit Channel → Integrations → Webhooks → Copy Webhook URL) แล้วจะได้ข้อความตอน index ครบ (ครั้งเดียว จำไว้ใน `app_state`) และตอนรอบเก็บ index ล้มเหลว
   - รันบ่อยแบบนี้ยังช่วยไม่ให้ Supabase แพ็กเกจฟรีถูกพักเพราะไม่มีการใช้งาน 7 วัน
 - Cron (`vercel.json`) เรียก `/api/cron/index` วันละครั้ง (แพ็กเกจ Hobby รันได้วันละครั้ง) แต่ละรอบเก็บเพลงใหม่ได้ราว 100–150 เพลง ใช้ `CRON_SECRET` ที่ตั้งไว้ใน Vercel
 - ถ้าจะย้ายไปใช้ Supabase โปรเจกต์อื่น: ใส่ `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_URL_NON_POOLING`, `CRON_SECRET` ตาม `.env.example`

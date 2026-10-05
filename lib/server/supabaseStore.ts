@@ -155,18 +155,51 @@ export function supabaseStore(): Store {
     async knownUrls(source) {
       const urls = new Set<string>();
       const page = 1000;
-      for (let from = 0; ; from += page) {
-        const { data, error } = await db()
-          .from("songs")
-          .select("url")
-          .eq("source", source)
-          .order("id")
-          .range(from, from + page - 1);
-        if (error) throw error;
-        for (const r of data ?? []) urls.add(r.url);
-        if (!data || data.length < page) break;
+      for (const [table, order] of [
+        ["songs", "id"],
+        ["index_skips", "url"],
+      ] as const) {
+        for (let from = 0; ; from += page) {
+          const { data, error } = await db()
+            .from(table)
+            .select("url")
+            .eq("source", source)
+            .order(order)
+            .range(from, from + page - 1);
+          if (error) throw error;
+          for (const r of data ?? []) urls.add(r.url);
+          if (!data || data.length < page) break;
+        }
       }
       return urls;
+    },
+
+    async countSongs(source) {
+      const { count, error } = await db()
+        .from("songs")
+        .select("*", { count: "exact", head: true })
+        .eq("source", source);
+      if (error) throw error;
+      return count ?? 0;
+    },
+
+    async markSkipped(rows) {
+      if (!rows.length) return;
+      const { error } = await db().from("index_skips").upsert(rows, { onConflict: "url" });
+      if (error) throw error;
+    },
+
+    async getState<T>(key: string) {
+      const { data, error } = await db().from("app_state").select("value").eq("key", key).maybeSingle();
+      if (error) throw error;
+      return (data?.value as T | undefined) ?? null;
+    },
+
+    async setState(key, value) {
+      const { error } = await db()
+        .from("app_state")
+        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      if (error) throw error;
     },
 
     async songsByUrls(urls) {

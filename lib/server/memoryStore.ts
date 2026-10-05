@@ -16,6 +16,8 @@ interface MemState {
   webQueries?: Map<string, number>;
   webUsage?: Map<string, number>;
   webBlockedUntil?: { month: string; until: string };
+  skips?: Map<string, string>;
+  appState?: Map<string, unknown>;
 }
 
 const SONGS_FILE = path.join(process.cwd(), "data", "songs.local.json");
@@ -112,11 +114,32 @@ export function memoryStore(): Store {
     },
 
     async knownUrls(source) {
-      return new Set(
-        songs()
+      const skipped = [...(state.skips ?? new Map<string, string>()).entries()]
+        .filter(([, s]) => s === source)
+        .map(([url]) => url);
+      return new Set([
+        ...songs()
           .filter((s) => s.source === source)
           .map((s) => s.url),
-      );
+        ...skipped,
+      ]);
+    },
+
+    async countSongs(source) {
+      return songs().filter((s) => s.source === source).length;
+    },
+
+    async markSkipped(rows) {
+      const skips = (state.skips ??= new Map());
+      for (const r of rows) skips.set(r.url, r.source);
+    },
+
+    async getState<T>(key: string) {
+      return ((state.appState ??= new Map()).get(key) as T | undefined) ?? null;
+    },
+
+    async setState(key, value) {
+      (state.appState ??= new Map()).set(key, value);
     },
 
     async songsByUrls(urls) {

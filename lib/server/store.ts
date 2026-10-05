@@ -19,7 +19,12 @@ export interface Store {
   undo(code: string): Promise<RoomSnapshot | null>;
   searchSongs(q: string, source: SourceId | null, limit: number): Promise<SongRow[]>;
   getSong(id: number): Promise<SongRow | null>;
+  /** ลิงก์ที่ไม่ต้องดึงอีก: มีใน index แล้ว หรืออยู่ในรายการข้าม (ไม่ใช่หน้าเพลง) */
   knownUrls(source: SourceId): Promise<Set<string>>;
+  markSkipped(rows: { url: string; source: SourceId; reason: string }[]): Promise<void>;
+  countSongs(source: SourceId): Promise<number>;
+  getState<T>(key: string): Promise<T | null>;
+  setState(key: string, value: unknown): Promise<void>;
   upsertSongs(rows: NewSong[]): Promise<number>;
   songsByUrls(urls: string[]): Promise<SongRow[]>;
   /** จองโควตาค้นผ่าน search engine: คืน true ถ้าคำนี้ยังไม่เคยค้นใน 30 วันและเดือนนี้ยังไม่ถึง limit */

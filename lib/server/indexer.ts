@@ -95,6 +95,10 @@ export interface IndexReport {
   fetched: number;
   saved: number;
   remaining: number;
+  /** อ่านได้แต่ไม่ใช่หน้าเพลง (บันทึกไว้ไม่ดึงซ้ำ) */
+  skipped: number;
+  /** ดึงไม่สำเร็จ รอบหน้าลองใหม่ */
+  failed: number;
   skippedReason?: string;
 }
 
@@ -108,7 +112,16 @@ interface Plan {
 
 /** อ่าน robots.txt + sitemap ของเว็บหนึ่ง แล้วคืนรายการหน้าเพลงที่ยังไม่มีใน index (ใหม่สุดก่อน) */
 async function planSource(store: Store, source: SourceId, log: (m: string) => void): Promise<Plan> {
-  const report: IndexReport = { source, sitemapSongs: 0, alreadyIndexed: 0, fetched: 0, saved: 0, remaining: 0 };
+  const report: IndexReport = {
+    source,
+    sitemapSongs: 0,
+    alreadyIndexed: 0,
+    fetched: 0,
+    saved: 0,
+    remaining: 0,
+    skipped: 0,
+    failed: 0,
+  };
   const plan: Plan = { source, report, pending: [] };
   const cfg = INDEXED_SOURCES[source];
   if (!cfg) {
@@ -181,9 +194,10 @@ export async function runIndex(opts: IndexOptions): Promise<IndexReport[]> {
           ? [...pending]
           : [...pending.slice(0, half), ...pending.slice(pending.length - (maxPagesPerSource - half))];
       const batch: NewSong[] = [];
+      const skips: { url: string; source: SourceId; reason: string }[] = [];
       const flush = async () => {
-        if (!batch.length) return;
-        report.saved += await store.upsertSongs(batch.splice(0));
+        if (batch.length) report.saved += await store.upsertSongs(batch.splice(0));
+        if (skips.length) await store.markSkipped(skips.splice(0));
       };
       // ตัวเลขคู่เก็บจากเพลงใหม่สุด ตัวเลขคี่เก็บจากเพลงเก่าสุด (เพลงคลาสสิกที่วงเล่นบ่อยจะได้ไม่ต้องรอนาน)
       const worker = async (i: number) => {
@@ -193,14 +207,21 @@ export async function runIndex(opts: IndexOptions): Promise<IndexReport[]> {
           report.fetched++;
           const parsed = raw ? parseTitle(source, raw) : null;
           if (parsed) batch.push({ ...parsed, source, url });
-          if (batch.length >= 50) await flush();
+          // อ่านได้แต่ไม่ใช่หน้าเพลง → จำไว้ไม่ดึงซ้ำ · ดึงไม่ได้ (เน็ต/เว็บล่ม) → รอบหน้าลองใหม่
+          else if (raw) {
+            skips.push({ url, source, reason: "not-a-song-page" });
+            report.skipped++;
+          } else report.failed++;
+          if (batch.length + skips.length >= 50) await flush();
           await sleep(delayMs);
         }
       };
       await Promise.all(Array.from({ length: concurrency }, (_, i) => worker(i)));
       await flush();
       report.remaining = pending.length - report.fetched;
-      log(`${source}: อ่าน ${report.fetched} หน้า · บันทึก ${report.saved} · เหลือ ${report.remaining}`);
+      log(
+        `${source}: อ่าน ${report.fetched} หน้า · บันทึก ${report.saved} · ไม่ใช่หน้าเพลง ${report.skipped} · ดึงไม่ได้ ${report.failed} · เหลือ ${report.remaining}`,
+      );
     }),
   );
   return plans.map((p) => p.report);

@@ -2,6 +2,7 @@
 # รอบหนึ่งรันได้ถึง 5.5 ชม. ถ้ารอบก่อนยังไม่จบ รอบใหม่จะรอคิว (ไม่รันซ้อน) จึงเก็บต่อเนื่องจนครบ
 # เก็บครบแล้ว แต่ละรอบแค่อ่าน sitemap หาเพลงใหม่ ใช้เวลาไม่กี่นาที
 # ต้องตั้ง secrets: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+# ไม่บังคับ: DISCORD_WEBHOOK_URL → แจ้งเข้า Discord ตอน index ครบ (ครั้งเดียว) และตอนรอบเก็บ index ล้มเหลว
 name: Index songs
 
 on:
@@ -32,5 +33,16 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         # 3 การเชื่อมต่อต่อเว็บ พักหน้าละ 0.4 วินาที (ราว 2-3 หน้า/วินาทีต่อเว็บ)
         run: npm run index -- --max 0 --minutes 330 --concurrency 3 --delay 400
+      - name: แจ้ง Discord เมื่อรอบนี้ล้มเหลว
+        if: failure()
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -z "$DISCORD_WEBHOOK_URL" ] && exit 0
+          jq -n --arg c "⚠️ **เก็บ index เพลงรอบนี้ล้มเหลว** ดูรายละเอียด: $RUN_URL" \
+            '{username: "ChordRoom", content: $c, allowed_mentions: {parse: []}}' |
+            curl -sS -X POST -H "content-type: application/json" -d @- "$DISCORD_WEBHOOK_URL"
