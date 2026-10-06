@@ -113,7 +113,7 @@ hooks/                useRoom (state + realtime), useLayout, useSearch
 lib/                  realtime (Supabase / BroadcastChannel), theme, normalize
 lib/server/           store (Supabase / memory), indexer (sitemap → <title>), titles
 scripts/index-songs.mts   เก็บ index จากเครื่องตัวเอง
-supabase/migrations/      ตาราง + pg_trgm + search_songs()
+supabase/migrations/      ตาราง + pg_trgm + search_songs() + เจ้าของห้อง (owner_hash, kicked)
 ```
 
 **ส่วนที่ต่างจากร่างในสเปก**

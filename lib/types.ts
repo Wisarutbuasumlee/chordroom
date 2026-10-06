@@ -21,6 +21,8 @@ export interface Room {
   code: string;
   name: string;
   createdAt: string;
+  /** มีเจ้าของแล้ว (ห้องที่สร้างก่อนมีระบบเจ้าของยังไม่มี) */
+  hasOwner: boolean;
 }
 
 export interface RoomSnapshot {
@@ -28,6 +30,8 @@ export interface RoomSnapshot {
   current: RoomSong | null;
   /** ใหม่สุดก่อน รวมเพลงปัจจุบันด้วย */
   history: RoomSong[];
+  /** clientId ของแท็บที่เจ้าของห้องเชิญออก · แท็บที่เห็น id ตัวเองในนี้จะออกจากห้อง */
+  kicked: string[];
 }
 
 export interface SongRow {

@@ -20,6 +20,8 @@ export interface SongUndoEvent {
 export interface RoomChannelHandlers {
   onSongSet(e: SongSetEvent): void;
   onSongUndo(e: SongUndoEvent): void;
+  /** เจ้าของห้องเปลี่ยนชื่อ/ลบห้อง/เชิญคนออก: เป็นแค่สัญญาณให้ดึงสถานะจริงจาก server */
+  onRoomChanged(): void;
   onPresence(members: Member[]): void;
   onStatus(connected: boolean): void;
 }
@@ -27,6 +29,7 @@ export interface RoomChannelHandlers {
 export interface RoomChannel {
   sendSongSet(e: SongSetEvent): void;
   sendSongUndo(e: SongUndoEvent): void;
+  sendRoomChanged(): void;
   track(me: Member): void;
   /** เรียกตอนแท็บกลับมา active: ต่อใหม่ถ้าหลุด */
   ensureConnected(): void;
@@ -67,6 +70,7 @@ function supabaseChannel(code: string, h: RoomChannelHandlers): RoomChannel {
     channel
       .on("broadcast", { event: "song:set" }, ({ payload }) => h.onSongSet(payload as SongSetEvent))
       .on("broadcast", { event: "song:undo" }, ({ payload }) => h.onSongUndo(payload as SongUndoEvent))
+      .on("broadcast", { event: "room:changed" }, () => h.onRoomChanged())
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<Member>();
         h.onPresence(dedupe(Object.values(state).flat()));
@@ -82,6 +86,7 @@ function supabaseChannel(code: string, h: RoomChannelHandlers): RoomChannel {
   return {
     sendSongSet: (e) => void channel.send({ type: "broadcast", event: "song:set", payload: e }),
     sendSongUndo: (e) => void channel.send({ type: "broadcast", event: "song:undo", payload: e }),
+    sendRoomChanged: () => void channel.send({ type: "broadcast", event: "room:changed", payload: {} }),
     track(m) {
       me = m;
       if (channel.state === "joined") void channel.track(m);
@@ -104,6 +109,7 @@ function supabaseChannel(code: string, h: RoomChannelHandlers): RoomChannel {
 type LocalMsg =
   | { kind: "song:set"; payload: SongSetEvent }
   | { kind: "song:undo"; payload: SongUndoEvent }
+  | { kind: "room:changed" }
   | { kind: "presence"; member: Member }
   | { kind: "leave"; clientId: string }
   | { kind: "hello" };
@@ -131,6 +137,7 @@ function localChannel(code: string, h: RoomChannelHandlers): RoomChannel {
     const msg = ev.data;
     if (msg.kind === "song:set") h.onSongSet(msg.payload);
     else if (msg.kind === "song:undo") h.onSongUndo(msg.payload);
+    else if (msg.kind === "room:changed") h.onRoomChanged();
     else if (msg.kind === "presence") {
       seen.set(msg.member.clientId, { m: msg.member, at: Date.now() });
       emit();
@@ -153,6 +160,7 @@ function localChannel(code: string, h: RoomChannelHandlers): RoomChannel {
   return {
     sendSongSet: (e) => post({ kind: "song:set", payload: e }),
     sendSongUndo: (e) => post({ kind: "song:undo", payload: e }),
+    sendRoomChanged: () => post({ kind: "room:changed" }),
     track(m) {
       me = m;
       announce();

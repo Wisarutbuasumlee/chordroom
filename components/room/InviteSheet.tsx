@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckIcon, CloseIcon, CopyIcon } from "../Icons";
 import ThemeToggle from "../ThemeToggle";
 import { HistoryList, MemberList } from "./People";
+import { OwnerSection, RoomNameEditor } from "./RoomAdmin";
 import { useRoomCtx } from "./RoomContext";
 
 /** ชวนเพื่อน: มือถือเป็น bottom sheet · จอใหญ่เป็นหน้าต่างกลางจอ */
@@ -75,9 +76,7 @@ function Sheet({ onClose }: { onClose(): void }) {
         {sheet && <div className="h-[5px] w-11 self-center rounded-full bg-edge" aria-hidden="true" />}
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <h2 id="invite-title" className="m-0 truncate font-display text-[22px] font-bold">
-              {room.name}
-            </h2>
+            <RoomNameEditor id="invite-title" />
             <div className="text-[13px] text-muted">ชวนเพื่อนเข้าห้อง</div>
           </div>
           <ThemeToggle />
@@ -129,6 +128,7 @@ function Sheet({ onClose }: { onClose(): void }) {
           <MemberList title />
         </div>
         <HistoryList limit={6} onPicked={onClose} />
+        <OwnerSection />
       </section>
     </div>
   );

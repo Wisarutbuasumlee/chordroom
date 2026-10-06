@@ -8,6 +8,8 @@ interface RoomRow {
   code: string;
   name: string;
   created_at: string;
+  owner_hash: string | null;
+  kicked: string[] | null;
 }
 
 interface RoomSongRow {
@@ -22,9 +24,12 @@ interface RoomSongRow {
 }
 
 const ROOM_SONG_COLS = "id, song_id, source, url, title, artist, opened_by, opened_at";
+const ROOM_COLS = "id, code, name, created_at, owner_hash, kicked";
+/** จำแท็บที่ถูกเชิญออกไว้แค่นี้ (แท็บเก่าปิดไปนานแล้ว) */
+const KICKED_KEEP = 50;
 
 function toRoom(r: RoomRow): Room {
-  return { id: r.id, code: r.code, name: r.name, createdAt: r.created_at };
+  return { id: r.id, code: r.code, name: r.name, createdAt: r.created_at, hasOwner: Boolean(r.owner_hash) };
 }
 
 function toRoomSong(r: RoomSongRow): RoomSong {
@@ -50,7 +55,7 @@ function db(): SupabaseClient {
 }
 
 async function roomByCode(code: string): Promise<RoomRow | null> {
-  const { data, error } = await db().from("rooms").select("id, code, name, created_at").eq("code", code).maybeSingle();
+  const { data, error } = await db().from("rooms").select(ROOM_COLS).eq("code", code).maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -65,24 +70,68 @@ async function snapshot(room: RoomRow, historyLimit: number): Promise<RoomSnapsh
     .limit(historyLimit);
   if (error) throw error;
   const history = (data ?? []).map(toRoomSong);
-  return { room: toRoom(room), current: history[0] ?? null, history };
+  return { room: toRoom(room), current: history[0] ?? null, history, kicked: room.kicked ?? [] };
 }
 
 export function supabaseStore(): Store {
   return {
     kind: "supabase",
 
-    async createRoom(code, name) {
+    async createRoom(code, name, ownerHash) {
       const { data, error } = await db()
         .from("rooms")
-        .insert({ code, name })
-        .select("id, code, name, created_at")
+        .insert({ code, name, owner_hash: ownerHash })
+        .select(ROOM_COLS)
         .single();
       if (error) {
         if (error.code === "23505") return null; // รหัสซ้ำ ให้สุ่มใหม่
         throw error;
       }
       return toRoom(data);
+    },
+
+    async getOwnerHash(code) {
+      const room = await roomByCode(code);
+      return room ? room.owner_hash : undefined;
+    },
+
+    async claimRoom(code, ownerHash) {
+      // ตั้งได้เฉพาะห้องที่ยังไม่มีเจ้าของ (สองคนกดพร้อมกัน ได้คนเดียว)
+      const { data, error } = await db()
+        .from("rooms")
+        .update({ owner_hash: ownerHash })
+        .eq("code", code)
+        .is("owner_hash", null)
+        .select("id");
+      if (error) throw error;
+      return (data ?? []).length > 0;
+    },
+
+    async renameRoom(code, name) {
+      const { data, error } = await db()
+        .from("rooms")
+        .update({ name })
+        .eq("code", code)
+        .select(ROOM_COLS)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toRoom(data) : null;
+    },
+
+    async deleteRoom(code) {
+      // room_songs ถูกลบตามด้วย (on delete cascade)
+      const { data, error } = await db().from("rooms").delete().eq("code", code).select("id");
+      if (error) throw error;
+      return (data ?? []).length > 0;
+    },
+
+    async kick(code, clientId) {
+      const room = await roomByCode(code);
+      if (!room) return false;
+      const kicked = [...(room.kicked ?? []).filter((id) => id !== clientId), clientId].slice(-KICKED_KEEP);
+      const { error } = await db().from("rooms").update({ kicked }).eq("id", room.id);
+      if (error) throw error;
+      return true;
     },
 
     async getSnapshot(code, historyLimit = 30) {

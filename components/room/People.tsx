@@ -30,7 +30,7 @@ export function WatchingTogether() {
 }
 
 export function MemberList({ title = true }: { title?: boolean }) {
-  const { me } = useRoomCtx();
+  const { me, isOwner, admin } = useRoomCtx();
   const list = useSortedMembers();
   return (
     <div className="flex flex-col gap-2.5">
@@ -44,6 +44,16 @@ export function MemberList({ title = true }: { title?: boolean }) {
               {m.clientId === me.clientId && <span className="font-normal text-muted"> (คุณ)</span>}
               {!m.following && <span className="text-xs font-normal text-muted"> · ดูเพลงอื่นอยู่</span>}
             </div>
+            {isOwner && m.clientId !== me.clientId && (
+              <button
+                type="button"
+                onClick={() => void admin.kick(m)}
+                aria-label={`เชิญ ${m.name} ออกจากห้อง`}
+                className="h-9 shrink-0 rounded-full border-2 border-line px-3 text-[13px] font-bold text-ink"
+              >
+                เชิญออก
+              </button>
+            )}
           </li>
         ))}
       </ul>

@@ -28,6 +28,18 @@ export interface RoomCtx {
   openInvite(): void;
   openSearch(): void;
   toast(msg: string): void;
+  /** เครื่องนี้มีรหัสเจ้าของห้อง (สร้างห้องเอง หรือเปิดจากลิงก์เจ้าของร่วม) */
+  isOwner: boolean;
+  admin: {
+    /** คืนข้อความผิดพลาด หรือ null ถ้าสำเร็จ */
+    rename(name: string): Promise<string | null>;
+    kick(m: Member): Promise<void>;
+    /** ลบห้อง แล้วพากลับหน้าแรก · คืนข้อความผิดพลาด หรือ null ถ้าสำเร็จ */
+    remove(): Promise<string | null>;
+    /** ห้องที่ยังไม่มีเจ้าของ: ตั้งเครื่องนี้เป็นเจ้าของ */
+    claim(): Promise<void>;
+    ownerLink(): string | null;
+  };
 }
 
 export const RoomContext = createContext<RoomCtx | null>(null);

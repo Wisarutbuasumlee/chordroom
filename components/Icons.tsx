@@ -135,3 +135,16 @@ export const PasteIcon = (p: P) => (
     <path d="M9 11h6M9 15h4" />
   </svg>
 );
+
+export const PencilIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+    <path d="M13.5 6.5l4 4" />
+  </svg>
+);
+
+export const TrashIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);

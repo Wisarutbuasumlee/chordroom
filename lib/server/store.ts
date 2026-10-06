@@ -12,7 +12,15 @@ export interface NewSong {
 
 export interface Store {
   kind: "supabase" | "memory";
-  createRoom(code: string, name: string): Promise<Room | null>;
+  createRoom(code: string, name: string, ownerHash: string): Promise<Room | null>;
+  /** hash ของรหัสเจ้าของ · null = ห้องยังไม่มีเจ้าของ · undefined = ไม่มีห้องนี้ */
+  getOwnerHash(code: string): Promise<string | null | undefined>;
+  /** ตั้งเจ้าของให้ห้องที่ยังไม่มี · คืน false ถ้ามีเจ้าของอยู่แล้วหรือไม่มีห้อง */
+  claimRoom(code: string, ownerHash: string): Promise<boolean>;
+  renameRoom(code: string, name: string): Promise<Room | null>;
+  deleteRoom(code: string): Promise<boolean>;
+  /** เชิญแท็บนี้ออกจากห้อง (จำไว้แค่ล่าสุด 50 แท็บ) */
+  kick(code: string, clientId: string): Promise<boolean>;
   getSnapshot(code: string, historyLimit?: number): Promise<RoomSnapshot | null>;
   setSong(code: string, pick: SongPick, by: string): Promise<RoomSong | null>;
   /** ย้อนเพลงล่าสุด · คืนเพลงปัจจุบันหลังย้อน */

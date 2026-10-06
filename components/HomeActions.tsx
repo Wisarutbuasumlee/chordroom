@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { createRoom } from "@/lib/createRoom";
-import { loadLastRoom, loadProfile, type LastRoom } from "@/lib/profile";
+import { loadOwnerKey, loadProfile, loadRooms, type SavedRoom } from "@/lib/profile";
 import { normalizeRoomCode } from "@/lib/roomCode";
 import { ChevronRightIcon, PlusIcon } from "./Icons";
 
@@ -90,23 +90,38 @@ export function HomeActions() {
   );
 }
 
-export function RecentRoom() {
-  const [last, setLast] = useState<LastRoom | null>(null);
+/** ห้องที่เคยเข้า (ซ้อมหลายวง แต่ละวงคนละห้อง) · เข้าล่าสุดก่อน */
+export function MyRooms() {
+  const [rooms, setRooms] = useState<(SavedRoom & { owner: boolean })[]>([]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- อ่าน localStorage ได้หลัง mount เท่านั้น
-    setLast(loadLastRoom());
+    setRooms(loadRooms().map((r) => ({ ...r, owner: Boolean(loadOwnerKey(r.code)) })));
   }, []);
-  if (!last) return null;
+  if (!rooms.length) return null;
   return (
-    <Link
-      href={`/r/${last.code}`}
-      className="flex items-center gap-3 rounded-[18px] border-2 border-edge bg-surface p-3.5 text-ink no-underline"
-    >
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] font-bold">ห้องล่าสุด: {last.name}</div>
-        <div className="font-mono text-[13px] text-muted">{last.code}</div>
-      </div>
-      <ChevronRightIcon />
-    </Link>
+    <section className="flex flex-col gap-2" aria-labelledby="my-rooms">
+      <h2 id="my-rooms" className="m-0 text-[13px] font-semibold text-muted">
+        ห้องของฉัน
+      </h2>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {rooms.map((r) => (
+          <li key={r.code}>
+            <Link
+              href={`/r/${r.code}`}
+              className="flex items-center gap-3 rounded-[18px] border-2 border-edge bg-surface p-3.5 text-ink no-underline"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[15px] font-bold">{r.name}</div>
+                <div className="font-mono text-[13px] text-muted">
+                  {r.code}
+                  {r.owner && <span className="font-sans"> · เจ้าของ</span>}
+                </div>
+              </div>
+              <ChevronRightIcon />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

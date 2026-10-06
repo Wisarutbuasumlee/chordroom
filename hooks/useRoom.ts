@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { safeName } from "@/lib/linkText";
+import { getClientId } from "@/lib/profile";
 import { connectRoom, type RoomChannel } from "@/lib/realtime";
-import type { Member, RoomSnapshot, RoomSong } from "@/lib/types";
+import type { Member, Room, RoomSnapshot, RoomSong } from "@/lib/types";
 
-export type RoomStatus = "loading" | "ready" | "notfound" | "error";
+/** kicked = เจ้าของห้องเชิญแท็บนี้ออก (เปิดลิงก์ห้องใหม่ก็กลับเข้ามาได้) */
+export type RoomStatus = "loading" | "ready" | "notfound" | "error" | "kicked";
 
 export interface RoomEvent {
   kind: "set" | "undo";
@@ -43,9 +45,17 @@ export function useRoom(code: string, name: string | null) {
   const [lastEvent, setLastEvent] = useState<RoomEvent | null>(null);
   const channel = useRef<RoomChannel | null>(null);
   const meRef = useRef<Member | null>(null);
+  /** ปิดช่อง realtime (เรียกซ้ำได้) · ถูกเชิญออกแล้วต้องหายจากรายชื่อคนในห้องทันที */
+  const closeChannel = useRef<(() => void) | null>(null);
+  const kicked = useRef(false);
 
   const apply = useCallback((r: FetchResult) => {
-    if (r.kind === "ok") {
+    if (kicked.current) return;
+    if (r.kind === "ok" && r.snapshot.kicked?.includes(getClientId())) {
+      kicked.current = true;
+      closeChannel.current?.();
+      setStatus("kicked");
+    } else if (r.kind === "ok") {
       setSnapshot(r.snapshot);
       setStatus("ready");
     } else if (r.kind === "notfound") setStatus("notfound");
@@ -87,17 +97,26 @@ export function useRoom(code: string, name: string | null) {
       onSongSet: () => void syncFromServer("set", (s) => s.current?.openedBy ?? "มีคน"),
       // server ไม่ได้จดว่าใครกดย้อน จึงใช้ชื่อในข้อความ แต่ไม่แสดงถ้ามีลิงก์ปนมา
       onSongUndo: (e) => void syncFromServer("undo", () => safeName(String(e.by ?? ""))),
+      onRoomChanged: () => void fetchRoom(code).then(apply),
       // ชื่อใน presence มาจากเครื่องคนอื่นตรงๆ ไม่ผ่าน server: ตัดความยาว และซ่อนชื่อที่มีลิงก์
       onPresence: (list) =>
         setMembers(list.map((m) => ({ ...m, name: safeName(String(m.name ?? "").slice(0, 24), "ไม่ระบุชื่อ") }))),
       onStatus: setConnected,
     });
     channel.current = ch;
+    let closed = false;
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      ch.close();
+      channel.current = null;
+    };
+    closeChannel.current = close;
     if (meRef.current) ch.track(meRef.current);
 
     // มือถือหยุด JS ของแท็บที่ไม่ได้ดู: กลับมาเมื่อไหร่ ดึงสถานะล่าสุดและต่อ realtime ใหม่
     const wake = () => {
-      if (document.visibilityState !== "visible") return;
+      if (document.visibilityState !== "visible" || closed) return;
       ch.ensureConnected();
       void refresh();
     };
@@ -108,8 +127,7 @@ export function useRoom(code: string, name: string | null) {
       document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("online", wake);
       window.removeEventListener("pageshow", wake);
-      ch.close();
-      channel.current = null;
+      close();
     };
   }, [code, apply, refresh, syncFromServer]);
 
@@ -163,5 +181,9 @@ export function useRoom(code: string, name: string | null) {
     }
   }, [code, name]);
 
-  return { snapshot, status, members, connected, lastEvent, setSong, undo, refresh, track };
+  /** เจ้าของห้องเปลี่ยนชื่อ/เชิญคนออก/ลบห้องแล้ว: บอกคนอื่นในห้องให้ดึงสถานะใหม่ */
+  const notifyChanged = useCallback(() => channel.current?.sendRoomChanged(), []);
+  const updateRoom = useCallback((room: Room) => setSnapshot((prev) => (prev ? { ...prev, room } : prev)), []);
+
+  return { snapshot, status, members, connected, lastEvent, setSong, undo, refresh, track, notifyChanged, updateRoom };
 }

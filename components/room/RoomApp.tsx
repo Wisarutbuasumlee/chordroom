@@ -6,8 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLayout } from "@/hooks/useLayout";
 import { useNow } from "@/hooks/useNow";
 import { useRoom, type SongInput } from "@/hooks/useRoom";
-import { getClientId, loadProfile, saveLastRoom, type Profile } from "@/lib/profile";
+import { forgetRoom, getClientId, loadOwnerKey, loadProfile, saveRoom, type Profile } from "@/lib/profile";
 import { realtimeMode } from "@/lib/realtime";
+import { claimRoom, deleteRoom, kickMember, ownerLink, renameRoom, takeOwnerKeyFromHash } from "@/lib/roomAdmin";
 import type { Member, RoomSong } from "@/lib/types";
 import InviteSheet from "./InviteSheet";
 import { RoomContext, type RoomCtx } from "./RoomContext";
@@ -33,9 +34,12 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   const [following, setFollowingState] = useState(true);
   const [held, setHeld] = useState<RoomSong | null>(null);
   const [toastMsg, setToastMsg] = useState<{ text: string; at: number } | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
 
   // ตัวตนเก็บในเครื่อง: ยังไม่มีชื่อ → ไปหน้าใส่ชื่อก่อน
   useEffect(() => {
+    // ลิงก์เจ้าของร่วม (#owner=…) เก็บรหัสก่อน ไม่งั้นหายตอนพาไปหน้าใส่ชื่อ
+    takeOwnerKeyFromHash(code);
     const p = loadProfile();
     if (!p) {
       router.replace(`/r/${code}/join`);
@@ -44,6 +48,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
     /* eslint-disable react-hooks/set-state-in-effect -- อ่านค่าจาก localStorage ได้หลัง mount เท่านั้น */
     setProfile(p);
     setClientId(getClientId());
+    setIsOwner(Boolean(loadOwnerKey(code)));
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [code, router]);
 
@@ -69,8 +74,13 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   }, [me, track]);
 
   useEffect(() => {
-    if (snapshot) saveLastRoom({ code: snapshot.room.code, name: snapshot.room.name });
+    if (snapshot) saveRoom({ code: snapshot.room.code, name: snapshot.room.name });
   }, [snapshot]);
+
+  // ห้องถูกลบ (หรือรหัสผิด): เอาออกจากรายการห้องในหน้าแรก
+  useEffect(() => {
+    if (room.status === "notfound") forgetRoom(code);
+  }, [room.status, code]);
 
   const toast = useCallback((text: string) => setToastMsg({ text, at: Date.now() }), []);
 
@@ -129,6 +139,43 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
     if (!(await roomUndo())) toast("ย้อนเพลงไม่สำเร็จ");
   }, [roomUndo, toast]);
 
+  // จัดการห้อง (เฉพาะเจ้าของ · server ตรวจรหัสเจ้าของซ้ำทุกครั้ง) · ทำเสร็จแล้วบอกคนอื่นในห้องให้ดึงสถานะใหม่
+  const { notifyChanged, updateRoom, refresh: refreshRoom } = room;
+  const admin = useMemo<RoomCtx["admin"]>(
+    () => ({
+      async rename(name) {
+        const r = await renameRoom(code, name);
+        if (!r.ok) return r.error;
+        updateRoom(r.room);
+        notifyChanged();
+        return null;
+      },
+      async kick(m) {
+        const r = await kickMember(code, m.clientId);
+        if (!r.ok) return toast(r.error);
+        notifyChanged();
+        toast(`เชิญ ${m.name} ออกจากห้องแล้ว`);
+      },
+      async remove() {
+        const r = await deleteRoom(code);
+        if (!r.ok) return r.error;
+        notifyChanged();
+        forgetRoom(code);
+        router.replace("/");
+        return null;
+      },
+      async claim() {
+        const r = await claimRoom(code);
+        if (!r.ok) return toast(r.error);
+        setIsOwner(true);
+        void refreshRoom();
+        toast("คุณเป็นเจ้าของห้องนี้แล้ว");
+      },
+      ownerLink: () => ownerLink(code),
+    }),
+    [code, notifyChanged, updateRoom, toast, router, refreshRoom],
+  );
+
   const ctx = useMemo<RoomCtx | null>(() => {
     if (!snapshot || !me || !info) return null;
     return {
@@ -155,8 +202,12 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
       openInvite: () => setInviteOpen(true),
       openSearch,
       toast,
+      isOwner,
+      admin,
     };
   }, [
+    isOwner,
+    admin,
     snapshot,
     me,
     info,
@@ -176,6 +227,13 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
 
   if (room.status === "notfound")
     return <RoomMessage title="ไม่พบห้องนี้" body={`ไม่มีห้องรหัส ${code} หรือห้องถูกลบไปแล้ว`} />;
+  if (room.status === "kicked")
+    return (
+      <RoomMessage
+        title="คุณถูกเชิญออกจากห้อง"
+        body={`เจ้าของห้อง${snapshot ? ` “${snapshot.room.name}”` : ""} เชิญคุณออกจากห้องแล้ว`}
+      />
+    );
   if (room.status === "error" && !snapshot)
     return (
       <RoomMessage

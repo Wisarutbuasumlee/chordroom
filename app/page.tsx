@@ -1,4 +1,4 @@
-import { HomeActions, RecentRoom } from "@/components/HomeActions";
+import { HomeActions, MyRooms } from "@/components/HomeActions";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Logo } from "@/components/ui";
 import { SOURCES } from "@/lib/sources";
@@ -62,7 +62,7 @@ export default function Home() {
               ))}
             </ol>
           </div>
-          <RecentRoom />
+          <MyRooms />
         </div>
       </main>
     </div>

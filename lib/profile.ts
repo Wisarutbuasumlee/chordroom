@@ -12,16 +12,22 @@ export interface Profile {
   color: string;
 }
 
-export interface LastRoom {
+export interface SavedRoom {
   code: string;
   name: string;
 }
 
 const KEYS = {
   profile: "chordroom:profile",
+  /** แบบเก่า: จำแค่ห้องล่าสุดห้องเดียว (ย้ายเข้า rooms ตอนอ่านครั้งแรก) */
   lastRoom: "chordroom:lastRoom",
+  rooms: "chordroom:rooms",
+  owners: "chordroom:owners",
   sidebar: "chordroom:sidebar",
 };
+
+/** จำห้องที่เคยเข้าไว้เท่านี้ (ซ้อมหลายวง แต่ละวงคนละห้อง) */
+const ROOMS_KEEP = 20;
 
 function read<T>(key: string, storage: () => Storage = () => localStorage): T | null {
   try {
@@ -49,12 +55,37 @@ export function saveProfile(p: Profile) {
   write(KEYS.profile, { name: p.name.trim().slice(0, 24), color: p.color });
 }
 
-export function loadLastRoom(): LastRoom | null {
-  return read<LastRoom>(KEYS.lastRoom);
+/** ห้องที่เคยเข้า เข้าล่าสุดก่อน */
+export function loadRooms(): SavedRoom[] {
+  const list = read<SavedRoom[]>(KEYS.rooms);
+  if (Array.isArray(list)) return list.filter((r) => r && typeof r.code === "string" && typeof r.name === "string");
+  const last = read<SavedRoom>(KEYS.lastRoom);
+  return last?.code ? [{ code: last.code, name: String(last.name ?? last.code) }] : [];
 }
 
-export function saveLastRoom(r: LastRoom) {
-  write(KEYS.lastRoom, r);
+export function saveRoom(r: SavedRoom) {
+  write(KEYS.rooms, [r, ...loadRooms().filter((x) => x.code !== r.code)].slice(0, ROOMS_KEEP));
+}
+
+/** ห้องถูกลบ/ไม่มีแล้ว: เอาออกจากรายการและลืมรหัสเจ้าของ */
+export function forgetRoom(code: string) {
+  write(
+    KEYS.rooms,
+    loadRooms().filter((x) => x.code !== code),
+  );
+  const owners = read<Record<string, string>>(KEYS.owners) ?? {};
+  delete owners[code];
+  write(KEYS.owners, owners);
+}
+
+/** รหัสเจ้าของห้อง (ได้ตอนสร้างห้อง หรือจากลิงก์เจ้าของร่วม) */
+export function loadOwnerKey(code: string): string | null {
+  const key = read<Record<string, string>>(KEYS.owners)?.[code];
+  return typeof key === "string" && key ? key : null;
+}
+
+export function saveOwnerKey(code: string, key: string) {
+  write(KEYS.owners, { ...(read<Record<string, string>>(KEYS.owners) ?? {}), [code]: key });
 }
 
 /** แถบข้างบนคอม: เปิดหรือพับไว้ (จำไว้ในเครื่อง) */

@@ -18,6 +18,8 @@ interface MemState {
   webBlockedUntil?: { month: string; until: string };
   skips?: Map<string, string>;
   appState?: Map<string, unknown>;
+  owners?: Map<string, string>;
+  kicked?: Map<string, string[]>;
 }
 
 const SONGS_FILE = path.join(process.cwd(), "data", "songs.local.json");
@@ -55,19 +57,54 @@ function snapshot(code: string, limit: number): RoomSnapshot | null {
     .slice(-limit)
     .reverse()
     .map(withoutUndone);
-  return { room, current: history[0] ?? null, history };
+  return { room, current: history[0] ?? null, history, kicked: state.kicked?.get(code) ?? [] };
 }
 
 export function memoryStore(): Store {
   return {
     kind: "memory",
 
-    async createRoom(code, name) {
+    async createRoom(code, name, ownerHash) {
       if (state.rooms.has(code)) return null;
-      const room: Room = { id: crypto.randomUUID(), code, name, createdAt: new Date().toISOString() };
+      const room: Room = { id: crypto.randomUUID(), code, name, createdAt: new Date().toISOString(), hasOwner: true };
       state.rooms.set(code, room);
       state.roomSongs.set(code, []);
+      (state.owners ??= new Map()).set(code, ownerHash);
       return room;
+    },
+
+    async getOwnerHash(code) {
+      if (!state.rooms.has(code)) return undefined;
+      return state.owners?.get(code) ?? null;
+    },
+
+    async claimRoom(code, ownerHash) {
+      const room = state.rooms.get(code);
+      if (!room || state.owners?.has(code)) return false;
+      (state.owners ??= new Map()).set(code, ownerHash);
+      room.hasOwner = true;
+      return true;
+    },
+
+    async renameRoom(code, name) {
+      const room = state.rooms.get(code);
+      if (!room) return null;
+      room.name = name;
+      return room;
+    },
+
+    async deleteRoom(code) {
+      state.roomSongs.delete(code);
+      state.owners?.delete(code);
+      state.kicked?.delete(code);
+      return state.rooms.delete(code);
+    },
+
+    async kick(code, clientId) {
+      if (!state.rooms.has(code)) return false;
+      const kicked = (state.kicked ??= new Map<string, string[]>());
+      kicked.set(code, [...(kicked.get(code) ?? []).filter((id) => id !== clientId), clientId].slice(-50));
+      return true;
     },
 
     async getSnapshot(code, historyLimit = 30) {
