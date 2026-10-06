@@ -6,11 +6,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLayout } from "@/hooks/useLayout";
 import { useNow } from "@/hooks/useNow";
 import { useRoom, type SongInput } from "@/hooks/useRoom";
-import { forgetRoom, getClientId, loadOwnerKey, loadProfile, saveRoom, type Profile } from "@/lib/profile";
+import { forgetRoom, getClientId, loadOwnerKey, loadProfile, saveProfile, saveRoom, type Profile } from "@/lib/profile";
 import { realtimeMode } from "@/lib/realtime";
 import { claimRoom, deleteRoom, kickMember, ownerLink, renameRoom, takeOwnerKeyFromHash } from "@/lib/roomAdmin";
 import type { Member, RoomSong } from "@/lib/types";
 import InviteSheet from "./InviteSheet";
+import SettingsSheet from "./SettingsSheet";
 import { RoomContext, type RoomCtx } from "./RoomContext";
 import { DeskRoom, PhoneRoom, PortraitRoom, TabletRoom, type SideTab } from "./RoomLayouts";
 import SearchPalette from "./SearchPalette";
@@ -27,6 +28,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   const [clientId, setClientId] = useState("");
   const room = useRoom(code, profile?.name ?? null);
   const [inviteOpen, setInviteOpen] = useState(openInvite);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [searchSheetOpen, setSearchSheetOpen] = useState(false);
   const [phoneTab, setPhoneTab] = useState<"song" | "search">("song");
@@ -64,14 +66,32 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
     [current],
   );
 
+  // นำการเลื่อน: คนที่ติดตามห้องเลื่อนหน้าคอร์ดตามเรา · มีคนอื่นกดนำทีหลัง เราเลิกนำเอง
+  const [leading, setLeadingState] = useState(false);
+  const { scroll } = room;
+  const setLeading = useCallback(
+    (v: boolean) => {
+      setLeadingState(v);
+      if (v && clientId) scroll.claimLead(clientId);
+    },
+    [scroll, clientId],
+  );
+  useEffect(() => scroll.onLead((id) => id !== clientId && setLeadingState(false)), [scroll, clientId]);
+
   const me = useMemo<Member | null>(
-    () => (profile && clientId ? { clientId, name: profile.name, color: profile.color, following } : null),
-    [profile, clientId, following],
+    () => (profile && clientId ? { clientId, name: profile.name, color: profile.color, following, leading } : null),
+    [profile, clientId, following, leading],
   );
   const { track } = room;
   useEffect(() => {
     if (me) track(me);
   }, [me, track]);
+
+  // คนนำ: เราเอง หรือคนอื่นในห้องที่ประกาศว่านำอยู่ (ถ้ามีหลายคนจากจังหวะกดพร้อมกัน เอาคนแรกในรายการ)
+  const leader = useMemo(
+    () => (leading ? me : (room.members.find((m) => m.leading && m.clientId !== clientId) ?? null)),
+    [leading, me, room.members, clientId],
+  );
 
   useEffect(() => {
     if (snapshot) saveRoom({ code: snapshot.room.code, name: snapshot.room.name });
@@ -154,7 +174,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
         const r = await kickMember(code, m.clientId);
         if (!r.ok) return toast(r.error);
         notifyChanged();
-        toast(`เชิญ ${m.name} ออกจากห้องแล้ว`);
+        toast(`เตะ ${m.name} ออกจากห้องแล้ว`);
       },
       async remove() {
         const r = await deleteRoom(code);
@@ -200,14 +220,25 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
         }
       },
       openInvite: () => setInviteOpen(true),
+      openSettings: () => setSettingsOpen(true),
+      updateProfile: (p: Profile) => {
+        saveProfile(p);
+        setProfile(p);
+      },
       openSearch,
       toast,
       isOwner,
       admin,
+      leader,
+      setLeading,
+      scroll,
     };
   }, [
     isOwner,
     admin,
+    leader,
+    setLeading,
+    scroll,
     snapshot,
     me,
     info,
@@ -230,8 +261,8 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
   if (room.status === "kicked")
     return (
       <RoomMessage
-        title="คุณถูกเชิญออกจากห้อง"
-        body={`เจ้าของห้อง${snapshot ? ` “${snapshot.room.name}”` : ""} เชิญคุณออกจากห้องแล้ว`}
+        title="คุณถูกเตะออกจากห้อง"
+        body={`เจ้าของห้อง${snapshot ? ` “${snapshot.room.name}”` : ""} เตะคุณออกจากห้องแล้ว`}
       />
     );
   if (room.status === "error" && !snapshot)
@@ -254,6 +285,7 @@ export default function RoomApp({ code, openInvite = false }: { code: string; op
         {layout === "phone" && <PhoneRoom tab={phoneTab} setTab={setPhoneTab} />}
       </div>
       <InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <SearchPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       {/* มือถือ: ไว้เหนือเมนูล่าง ไม่บังแถบ "เปิดเพลงนี้ให้ทุกคน" ด้านบน */}
       <Toast toast={latestToast} bottom={layout === "phone"} />

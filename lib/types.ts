@@ -30,7 +30,7 @@ export interface RoomSnapshot {
   current: RoomSong | null;
   /** ใหม่สุดก่อน รวมเพลงปัจจุบันด้วย */
   history: RoomSong[];
-  /** clientId ของแท็บที่เจ้าของห้องเชิญออก · แท็บที่เห็น id ตัวเองในนี้จะออกจากห้อง */
+  /** clientId ของแท็บที่เจ้าของห้องเตะออก · แท็บที่เห็น id ตัวเองในนี้จะออกจากห้อง */
   kicked: string[];
 }
 
@@ -55,4 +55,6 @@ export interface Member {
   color: string;
   /** กำลังดูเพลงเดียวกับห้องอยู่ (เปิด "ติดตามห้อง") */
   following: boolean;
+  /** กำลังนำการเลื่อน: คนที่ติดตามห้องเลื่อนหน้าคอร์ดตามคนนี้ (แท็บรุ่นเก่าไม่มีค่านี้) */
+  leading?: boolean;
 }

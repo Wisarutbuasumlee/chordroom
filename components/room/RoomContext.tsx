@@ -3,6 +3,8 @@
 import { createContext, useContext } from "react";
 import type { RoomEvent, SongInput } from "@/hooks/useRoom";
 import type { LayoutInfo } from "@/hooks/useLayout";
+import type { Profile } from "@/lib/profile";
+import type { ScrollPosEvent } from "@/lib/realtime";
 import type { Member, Room, RoomSong } from "@/lib/types";
 
 export interface RoomCtx {
@@ -26,6 +28,10 @@ export interface RoomCtx {
   /** เปิดลิงก์เป็นแท็บใหม่โดยไม่เปลี่ยนเพลงของห้อง (เช่น หน้าค้นหาของ dochord) */
   openInChordTab(url: string): void;
   openInvite(): void;
+  /** หน้าต่างแก้ไขห้อง: ชื่อห้อง ชื่อของเรา คนในห้อง จัดการห้อง */
+  openSettings(): void;
+  /** เปลี่ยนชื่อ/สีของเรา (จำไว้ในเครื่อง และคนอื่นในห้องเห็นทันที) */
+  updateProfile(p: Profile): void;
   openSearch(): void;
   toast(msg: string): void;
   /** เครื่องนี้มีรหัสเจ้าของห้อง (สร้างห้องเอง หรือเปิดจากลิงก์เจ้าของร่วม) */
@@ -39,6 +45,14 @@ export interface RoomCtx {
     /** ห้องที่ยังไม่มีเจ้าของ: ตั้งเครื่องนี้เป็นเจ้าของ */
     claim(): Promise<void>;
     ownerLink(): string | null;
+  };
+  /** คนที่นำการเลื่อนอยู่ (อาจเป็นเราเอง) · null = ไม่มีใครนำ */
+  leader: Member | null;
+  setLeading(v: boolean): void;
+  scroll: {
+    send(e: ScrollPosEvent): void;
+    /** รับตำแหน่งเลื่อนจากคนอื่น · คืนฟังก์ชันเลิกรับ */
+    onScroll(fn: (e: ScrollPosEvent) => void): () => void;
   };
 }
 

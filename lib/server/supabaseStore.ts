@@ -25,7 +25,7 @@ interface RoomSongRow {
 
 const ROOM_SONG_COLS = "id, song_id, source, url, title, artist, opened_by, opened_at";
 const ROOM_COLS = "id, code, name, created_at, owner_hash, kicked";
-/** จำแท็บที่ถูกเชิญออกไว้แค่นี้ (แท็บเก่าปิดไปนานแล้ว) */
+/** จำแท็บที่ถูกเตะออกไว้แค่นี้ (แท็บเก่าปิดไปนานแล้ว) */
 const KICKED_KEEP = 50;
 
 function toRoom(r: RoomRow): Room {

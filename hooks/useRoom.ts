@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { safeName } from "@/lib/linkText";
 import { getClientId } from "@/lib/profile";
-import { connectRoom, type RoomChannel } from "@/lib/realtime";
+import { connectRoom, type RoomChannel, type ScrollPosEvent } from "@/lib/realtime";
 import type { Member, Room, RoomSnapshot, RoomSong } from "@/lib/types";
 
-/** kicked = เจ้าของห้องเชิญแท็บนี้ออก (เปิดลิงก์ห้องใหม่ก็กลับเข้ามาได้) */
+/** kicked = เจ้าของห้องเตะแท็บนี้ออก (เปิดลิงก์ห้องใหม่ก็กลับเข้ามาได้) */
 export type RoomStatus = "loading" | "ready" | "notfound" | "error" | "kicked";
 
 export interface RoomEvent {
@@ -45,9 +45,12 @@ export function useRoom(code: string, name: string | null) {
   const [lastEvent, setLastEvent] = useState<RoomEvent | null>(null);
   const channel = useRef<RoomChannel | null>(null);
   const meRef = useRef<Member | null>(null);
-  /** ปิดช่อง realtime (เรียกซ้ำได้) · ถูกเชิญออกแล้วต้องหายจากรายชื่อคนในห้องทันที */
+  /** ปิดช่อง realtime (เรียกซ้ำได้) · ถูกเตะออกแล้วต้องหายจากรายชื่อคนในห้องทันที */
   const closeChannel = useRef<(() => void) | null>(null);
   const kicked = useRef(false);
+  // ตำแหน่งเลื่อนมาถี่ (หลายครั้งต่อวินาที) จึงส่งตรงให้กรอบคอร์ด ไม่ผ่าน state ของทั้งห้อง
+  const scrollListeners = useRef(new Set<(e: ScrollPosEvent) => void>());
+  const leadListeners = useRef(new Set<(clientId: string) => void>());
 
   const apply = useCallback((r: FetchResult) => {
     if (kicked.current) return;
@@ -98,6 +101,16 @@ export function useRoom(code: string, name: string | null) {
       // server ไม่ได้จดว่าใครกดย้อน จึงใช้ชื่อในข้อความ แต่ไม่แสดงถ้ามีลิงก์ปนมา
       onSongUndo: (e) => void syncFromServer("undo", () => safeName(String(e.by ?? ""))),
       onRoomChanged: () => void fetchRoom(code).then(apply),
+      // ตำแหน่งเลื่อนมาจากเครื่องคนอื่นตรงๆ: รับเฉพาะตัวเลขที่สมเหตุสมผล (ผิดพลาดแค่ทำให้เลื่อนเพี้ยน ไม่มีลิงก์/ข้อความ)
+      onScrollPos: (e) => {
+        if (typeof e?.clientId !== "string" || !Number.isInteger(e.songId) || !Number.isFinite(e.y)) return;
+        const pos = { clientId: e.clientId, songId: e.songId, y: Math.min(Math.max(e.y, 0), 100_000) };
+        for (const fn of scrollListeners.current) fn(pos);
+      },
+      onScrollLead: (e) => {
+        if (typeof e?.clientId !== "string") return;
+        for (const fn of leadListeners.current) fn(e.clientId);
+      },
       // ชื่อใน presence มาจากเครื่องคนอื่นตรงๆ ไม่ผ่าน server: ตัดความยาว และซ่อนชื่อที่มีลิงก์
       onPresence: (list) =>
         setMembers(list.map((m) => ({ ...m, name: safeName(String(m.name ?? "").slice(0, 24), "ไม่ระบุชื่อ") }))),
@@ -181,9 +194,39 @@ export function useRoom(code: string, name: string | null) {
     }
   }, [code, name]);
 
-  /** เจ้าของห้องเปลี่ยนชื่อ/เชิญคนออก/ลบห้องแล้ว: บอกคนอื่นในห้องให้ดึงสถานะใหม่ */
+  /** เจ้าของห้องเปลี่ยนชื่อ/เตะคนออก/ลบห้องแล้ว: บอกคนอื่นในห้องให้ดึงสถานะใหม่ */
   const notifyChanged = useCallback(() => channel.current?.sendRoomChanged(), []);
   const updateRoom = useCallback((room: Room) => setSnapshot((prev) => (prev ? { ...prev, room } : prev)), []);
 
-  return { snapshot, status, members, connected, lastEvent, setSong, undo, refresh, track, notifyChanged, updateRoom };
+  /** ซิงก์การเลื่อน: คนนำส่งตำแหน่ง · คนอื่นรับผ่าน onScroll */
+  const scroll = useMemo(
+    () => ({
+      send: (e: ScrollPosEvent) => channel.current?.sendScrollPos(e),
+      claimLead: (clientId: string) => channel.current?.sendScrollLead({ clientId }),
+      onScroll(fn: (e: ScrollPosEvent) => void) {
+        scrollListeners.current.add(fn);
+        return () => void scrollListeners.current.delete(fn);
+      },
+      onLead(fn: (clientId: string) => void) {
+        leadListeners.current.add(fn);
+        return () => void leadListeners.current.delete(fn);
+      },
+    }),
+    [],
+  );
+
+  return {
+    snapshot,
+    status,
+    members,
+    connected,
+    lastEvent,
+    setSong,
+    undo,
+    refresh,
+    track,
+    notifyChanged,
+    updateRoom,
+    scroll,
+  };
 }

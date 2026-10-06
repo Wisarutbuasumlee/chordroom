@@ -9,11 +9,14 @@ export default function ProfileForm({
   submitLabel,
   busyLabel,
   roomName = false,
+  keepBusy = true,
   onSubmit,
 }: {
   submitLabel: string;
   busyLabel: string;
   roomName?: boolean;
+  /** สำเร็จแล้วยังกดซ้ำไม่ได้ (ใช้ตอนพาไปหน้าอื่นต่อ) · false = กดบันทึกใหม่ได้ */
+  keepBusy?: boolean;
   onSubmit(p: Profile, roomName: string): Promise<string | null>;
 }) {
   const nameId = useId();
@@ -45,10 +48,8 @@ export default function ProfileForm({
     setBusy(true);
     setError(null);
     const err = await onSubmit({ name: n, color }, room.trim());
-    if (err) {
-      setError(err);
-      setBusy(false);
-    }
+    if (err) setError(err);
+    if (err || !keepBusy) setBusy(false);
   };
 
   return (

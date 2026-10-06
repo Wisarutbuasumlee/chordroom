@@ -44,9 +44,10 @@ export function RoomNameEditor({ id }: { id: string }) {
               setEditing(true);
             }}
             aria-label="เปลี่ยนชื่อห้อง"
-            className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted"
+            className="flex h-9 shrink-0 items-center gap-1 rounded-full border-2 border-line px-3 text-[13px] font-bold text-ink"
           >
-            <PencilIcon size={18} />
+            <PencilIcon size={15} />
+            เปลี่ยนชื่อ
           </button>
         )}
       </div>
@@ -101,7 +102,7 @@ export function OwnerSection() {
       <div className="flex flex-col gap-2 rounded-2xl border-2 border-line p-3.5">
         <SectionLabel>ห้องนี้ยังไม่มีเจ้าของ</SectionLabel>
         <p className="m-0 text-sm text-muted">
-          เจ้าของห้องเปลี่ยนชื่อห้อง เชิญคนออก และลบห้องได้ · คนแรกที่กดได้เป็นเจ้าของ
+          เจ้าของห้องเปลี่ยนชื่อห้อง เตะคนออก และลบห้องได้ · คนแรกที่กดได้เป็นเจ้าของ
         </p>
         <button
           type="button"
@@ -142,7 +143,7 @@ export function OwnerSection() {
         {copied ? "คัดลอกแล้ว" : "คัดลอกลิงก์เจ้าของร่วม"}
       </button>
       <p className="m-0 text-xs text-muted">
-        ส่งให้คนที่ช่วยดูแลห้องเท่านั้น · ใครเปิดลิงก์นี้จะเปลี่ยนชื่อ เชิญคนออก และลบห้องได้เหมือนคุณ
+        ส่งให้คนที่ช่วยดูแลห้องเท่านั้น · ใครเปิดลิงก์นี้จะเปลี่ยนชื่อ เตะคนออก และลบห้องได้เหมือนคุณ
       </p>
       {confirming ? (
         <div className="flex flex-col gap-2">

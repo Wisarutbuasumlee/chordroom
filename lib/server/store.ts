@@ -19,7 +19,7 @@ export interface Store {
   claimRoom(code: string, ownerHash: string): Promise<boolean>;
   renameRoom(code: string, name: string): Promise<Room | null>;
   deleteRoom(code: string): Promise<boolean>;
-  /** เชิญแท็บนี้ออกจากห้อง (จำไว้แค่ล่าสุด 50 แท็บ) */
+  /** เตะแท็บนี้ออกจากห้อง (จำไว้แค่ล่าสุด 50 แท็บ) */
   kick(code: string, clientId: string): Promise<boolean>;
   getSnapshot(code: string, historyLimit?: number): Promise<RoomSnapshot | null>;
   setSong(code: string, pick: SongPick, by: string): Promise<RoomSong | null>;

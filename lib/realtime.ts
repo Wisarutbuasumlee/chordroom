@@ -17,11 +17,25 @@ export interface SongUndoEvent {
   by: string;
 }
 
+/** ตำแหน่งเลื่อนของคนนำ (px จากบนสุดของหน้าคอร์ด) · ใช้กับเพลงที่ id ตรงกันเท่านั้น */
+export interface ScrollPosEvent {
+  clientId: string;
+  songId: number;
+  y: number;
+}
+
+/** มีคนกด "ให้ทุกคนเลื่อนตามฉัน": คนที่นำอยู่ก่อนเลิกนำ */
+export interface ScrollLeadEvent {
+  clientId: string;
+}
+
 export interface RoomChannelHandlers {
   onSongSet(e: SongSetEvent): void;
   onSongUndo(e: SongUndoEvent): void;
-  /** เจ้าของห้องเปลี่ยนชื่อ/ลบห้อง/เชิญคนออก: เป็นแค่สัญญาณให้ดึงสถานะจริงจาก server */
+  /** เจ้าของห้องเปลี่ยนชื่อ/ลบห้อง/เตะคนออก: เป็นแค่สัญญาณให้ดึงสถานะจริงจาก server */
   onRoomChanged(): void;
+  onScrollPos(e: ScrollPosEvent): void;
+  onScrollLead(e: ScrollLeadEvent): void;
   onPresence(members: Member[]): void;
   onStatus(connected: boolean): void;
 }
@@ -30,6 +44,8 @@ export interface RoomChannel {
   sendSongSet(e: SongSetEvent): void;
   sendSongUndo(e: SongUndoEvent): void;
   sendRoomChanged(): void;
+  sendScrollPos(e: ScrollPosEvent): void;
+  sendScrollLead(e: ScrollLeadEvent): void;
   track(me: Member): void;
   /** เรียกตอนแท็บกลับมา active: ต่อใหม่ถ้าหลุด */
   ensureConnected(): void;
@@ -71,6 +87,8 @@ function supabaseChannel(code: string, h: RoomChannelHandlers): RoomChannel {
       .on("broadcast", { event: "song:set" }, ({ payload }) => h.onSongSet(payload as SongSetEvent))
       .on("broadcast", { event: "song:undo" }, ({ payload }) => h.onSongUndo(payload as SongUndoEvent))
       .on("broadcast", { event: "room:changed" }, () => h.onRoomChanged())
+      .on("broadcast", { event: "scroll:pos" }, ({ payload }) => h.onScrollPos(payload as ScrollPosEvent))
+      .on("broadcast", { event: "scroll:lead" }, ({ payload }) => h.onScrollLead(payload as ScrollLeadEvent))
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState<Member>();
         h.onPresence(dedupe(Object.values(state).flat()));
@@ -87,6 +105,8 @@ function supabaseChannel(code: string, h: RoomChannelHandlers): RoomChannel {
     sendSongSet: (e) => void channel.send({ type: "broadcast", event: "song:set", payload: e }),
     sendSongUndo: (e) => void channel.send({ type: "broadcast", event: "song:undo", payload: e }),
     sendRoomChanged: () => void channel.send({ type: "broadcast", event: "room:changed", payload: {} }),
+    sendScrollPos: (e) => void channel.send({ type: "broadcast", event: "scroll:pos", payload: e }),
+    sendScrollLead: (e) => void channel.send({ type: "broadcast", event: "scroll:lead", payload: e }),
     track(m) {
       me = m;
       if (channel.state === "joined") void channel.track(m);
@@ -110,6 +130,8 @@ type LocalMsg =
   | { kind: "song:set"; payload: SongSetEvent }
   | { kind: "song:undo"; payload: SongUndoEvent }
   | { kind: "room:changed" }
+  | { kind: "scroll:pos"; payload: ScrollPosEvent }
+  | { kind: "scroll:lead"; payload: ScrollLeadEvent }
   | { kind: "presence"; member: Member }
   | { kind: "leave"; clientId: string }
   | { kind: "hello" };
@@ -138,6 +160,8 @@ function localChannel(code: string, h: RoomChannelHandlers): RoomChannel {
     if (msg.kind === "song:set") h.onSongSet(msg.payload);
     else if (msg.kind === "song:undo") h.onSongUndo(msg.payload);
     else if (msg.kind === "room:changed") h.onRoomChanged();
+    else if (msg.kind === "scroll:pos") h.onScrollPos(msg.payload);
+    else if (msg.kind === "scroll:lead") h.onScrollLead(msg.payload);
     else if (msg.kind === "presence") {
       seen.set(msg.member.clientId, { m: msg.member, at: Date.now() });
       emit();
@@ -161,6 +185,8 @@ function localChannel(code: string, h: RoomChannelHandlers): RoomChannel {
     sendSongSet: (e) => post({ kind: "song:set", payload: e }),
     sendSongUndo: (e) => post({ kind: "song:undo", payload: e }),
     sendRoomChanged: () => post({ kind: "room:changed" }),
+    sendScrollPos: (e) => post({ kind: "scroll:pos", payload: e }),
+    sendScrollLead: (e) => post({ kind: "scroll:lead", payload: e }),
     track(m) {
       me = m;
       announce();

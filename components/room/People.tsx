@@ -48,10 +48,10 @@ export function MemberList({ title = true }: { title?: boolean }) {
               <button
                 type="button"
                 onClick={() => void admin.kick(m)}
-                aria-label={`เชิญ ${m.name} ออกจากห้อง`}
+                aria-label={`เตะ ${m.name} ออกจากห้อง`}
                 className="h-9 shrink-0 rounded-full border-2 border-line px-3 text-[13px] font-bold text-ink"
               >
-                เชิญออก
+                เตะออก
               </button>
             )}
           </li>

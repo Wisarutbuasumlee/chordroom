@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { loadSidebarOpen, saveSidebarOpen } from "@/lib/profile";
-import { ChevronRightIcon, CloseIcon, CopyIcon, LinkIcon, MusicIcon, SearchIcon, UndoIcon, UsersIcon } from "../Icons";
+import {
+  ChevronRightIcon,
+  CloseIcon,
+  CopyIcon,
+  LinkIcon,
+  MusicIcon,
+  PencilIcon,
+  SearchIcon,
+  UndoIcon,
+  UsersIcon,
+} from "../Icons";
 import ThemeToggle from "../ThemeToggle";
 import { AvatarStack, Kbd, Logo } from "../ui";
 import ChordFrame from "./ChordFrame";
@@ -23,6 +33,27 @@ import SearchPanel from "./SearchPanel";
 
 const roundBtn =
   "flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-edge bg-surface text-ink no-underline";
+
+/** เปิดหน้าต่างแก้ไขห้อง (ชื่อห้อง ชื่อของเรา คนในห้อง) · compact = ปุ่มกลมไอคอนอย่างเดียว */
+function EditRoomButton({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+  const { openSettings } = useRoomCtx();
+  return (
+    <button
+      type="button"
+      onClick={openSettings}
+      aria-label="แก้ไขห้องและชื่อของฉัน"
+      title="แก้ไขห้องและชื่อของฉัน"
+      className={
+        compact
+          ? roundBtn
+          : `flex h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-edge bg-surface px-3.5 text-sm font-bold text-ink ${className}`
+      }
+    >
+      <PencilIcon size={18} />
+      {!compact && "แก้ไข"}
+    </button>
+  );
+}
 
 /** แบนเนอร์ "ไปดูด้วย" ลอยกลางล่างจอ (ตอนปิดติดตามห้อง) */
 function FloatingMovedBanner() {
@@ -45,6 +76,7 @@ export function PhoneRoom({ tab, setTab }: { tab: "song" | "search"; setTab(t: "
           <div className="truncate font-display text-lg font-bold">{room.name}</div>
           <div className="text-xs text-muted">{members.length} คนอยู่ในห้อง</div>
         </div>
+        <EditRoomButton />
         <ThemeToggle />
         <button type="button" onClick={openInvite} aria-label="ชวนเพื่อน" className={roundBtn}>
           <LinkIcon />
@@ -166,6 +198,7 @@ export function PortraitRoom({ searchOpen, setSearchOpen }: { searchOpen: boolea
         <button type="button" onClick={openInvite} aria-label="ชวนเพื่อน คนในห้อง และประวัติ" className={roundBtn}>
           <LinkIcon size={18} />
         </button>
+        <EditRoomButton compact />
         <ThemeToggle />
       </header>
       <div className="mx-4 min-h-0 flex-1">
@@ -241,6 +274,7 @@ export function TabletRoom({ sideTab, setSideTab }: { sideTab: SideTab; setSideT
             <div className="truncate font-display text-[19px] font-bold">{room.name}</div>
             <div className="font-mono text-xs text-muted">{code}</div>
           </div>
+          <EditRoomButton />
           <ThemeToggle />
           <button
             type="button"
@@ -339,12 +373,15 @@ export function DeskRoom() {
           </div>
 
           <div className="flex flex-col gap-3 rounded-[18px] border-2 border-edge bg-hl p-4 text-on-hl">
-            <div>
-              <div className="truncate font-display text-[19px] font-bold">{room.name}</div>
-              <div className="text-[13px]">
-                รหัส <span className="font-mono font-bold tracking-[0.06em]">{code}</span>
-                {!connected && <span> · กำลังเชื่อมต่อ…</span>}
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-display text-[19px] font-bold">{room.name}</div>
+                <div className="text-[13px]">
+                  รหัส <span className="font-mono font-bold tracking-[0.06em]">{code}</span>
+                  {!connected && <span> · กำลังเชื่อมต่อ…</span>}
+                </div>
               </div>
+              <EditRoomButton className="h-9 border-[#0F1A2B] bg-white text-[#0F1A2B]" />
             </div>
             <div className="flex gap-2">
               <button
