@@ -6,6 +6,7 @@
  *   npm run index -- --source chordtabs --max 0   (0 = ทั้งหมด)
  *   npm run index -- --max 0 --minutes 330        หยุดเองเมื่อครบ 330 นาที (ใช้ใน GitHub Actions)
  *   npm run index -- --concurrency 3 --delay 400  จำนวนการเชื่อมต่อต่อเว็บ / พักกี่มิลลิวินาทีต่อหน้า
+ *   npm run index -- --source dochord             เฉพาะ dochord (ดึงจากสำเนาใน Common Crawl ไม่ยิงไปที่ dochord)
  *
  * มี SUPABASE ใน .env.local → เขียนลง Supabase · ไม่มี → data/songs.local.json
  * หยุดกลางทางได้ รอบหน้าจะทำต่อจากที่ค้าง
@@ -14,6 +15,7 @@
 import { appendFileSync } from "node:fs";
 import { getStore } from "../lib/server/store";
 import { runIndex } from "../lib/server/indexer";
+import { runDochordArchive } from "../lib/server/commonCrawl";
 import { alertOnce } from "../lib/server/alerts";
 import { notifyDiscord } from "../lib/server/notify";
 import { isSourceId, SOURCE_BY_ID } from "../lib/sources";
@@ -46,20 +48,32 @@ if (process.env.GITHUB_ACTIONS && store.kind !== "supabase") {
 }
 console.log(`เขียน index ลง: ${store.kind === "supabase" ? "Supabase" : "data/songs.local.json"}`);
 
-const reports = await runIndex({
-  store,
-  sources: sourceArg ? [sourceArg as SourceId] : undefined,
-  maxPagesPerSource: max > 0 ? max : Infinity,
-  timeBudgetMs: minutes > 0 ? minutes * 60_000 : Infinity,
-  concurrency: concurrency > 0 ? Math.min(concurrency, 4) : 2,
-  delayMs: delayMs >= 200 ? delayMs : 500,
-  log: (m) => console.log(m),
-});
-console.table(reports);
+const deadline = minutes > 0 ? Date.now() + minutes * 60_000 : Infinity;
+const reports =
+  sourceArg === "dochord"
+    ? []
+    : await runIndex({
+        store,
+        sources: sourceArg ? [sourceArg as SourceId] : undefined,
+        maxPagesPerSource: max > 0 ? max : Infinity,
+        timeBudgetMs: minutes > 0 ? minutes * 60_000 : Infinity,
+        concurrency: concurrency > 0 ? Math.min(concurrency, 4) : 2,
+        delayMs: delayMs >= 200 ? delayMs : 500,
+        log: (m) => console.log(m),
+      });
+if (reports.length) console.table(reports);
+
+// dochord ไม่อยู่ใน runIndex (ปิดกั้นบอต) → เก็บจากสำเนาใน Common Crawl ด้วยเวลาที่เหลือ
+const archive =
+  !sourceArg || sourceArg === "dochord"
+    ? await runDochordArchive({ store, timeBudgetMs: deadline - Date.now(), log: (m) => console.log(m) })
+    : null;
+if (archive) console.table([archive]);
 
 // บอก GitHub Actions ว่ายังเหลือหน้าที่ไม่ได้อ่านกี่หน้า (ถ้ายังเหลือ workflow จะสั่งรอบถัดไปต่อเอง)
 if (process.env.GITHUB_OUTPUT) {
-  const remaining = reports.reduce((n, r) => n + (r.skippedReason ? 0 : r.remaining), 0);
+  // dochord: นับเฉพาะตอนหมดเวลากลางทาง (รอบเก็บที่ server ไม่ตอบ ให้รอบรายชั่วโมงลองใหม่ ไม่ต้องสั่งต่อทันที)
+  const remaining = reports.reduce((n, r) => n + (r.skippedReason ? 0 : r.remaining), 0) + (archive?.timedOut ? 1 : 0);
   appendFileSync(process.env.GITHUB_OUTPUT, `remaining=${remaining}\n`);
 }
 
@@ -67,6 +81,13 @@ if (process.env.GITHUB_OUTPUT) {
 // และแจ้งเตือนถ้าเว็บต้นทางเริ่มบล็อกการเก็บ index (เรื่องเดิมแจ้งไม่เกินวันละครั้ง)
 if (process.env.GITHUB_ACTIONS) {
   await store.setState("index_last_run", { at: new Date().toISOString() });
+  if (archive?.skippedReason) {
+    await alertOnce(
+      store,
+      "index:dochord:archive",
+      `🛑 **เก็บ index ของ dochord จาก Common Crawl ไม่ได้:** ${archive.skippedReason}`,
+    );
+  }
   for (const r of reports) {
     const host = SOURCE_BY_ID[r.source].host;
     if (r.skippedReason) {

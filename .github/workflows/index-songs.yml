@@ -2,6 +2,7 @@
 # รอบหนึ่งรันได้ถึง 5.5 ชม. (GitHub ให้ไม่เกิน 6 ชม.) ถ้าหมดเวลาแต่ยังเก็บไม่ครบ จะสั่งรอบถัดไปต่อเองทันที
 # ไม่ต้องรอตารางเวลา (schedule ของ GitHub บางทีดีเลย์/ไม่ทำงาน) · ถ้ารอบก่อนยังไม่จบ รอบใหม่จะรอคิว ไม่รันซ้อน
 # เก็บครบแล้ว แต่ละรอบแค่อ่าน sitemap หาเพลงใหม่ ใช้เวลาไม่กี่นาที
+# dochord เก็บจากสำเนาใน Common Crawl (ไม่ยิงไปที่ dochord) ทำต่อจากรอบเก็บที่ค้างไว้ และเก็บรอบใหม่ที่ออกทุกเดือนเอง
 # ต้องตั้ง secrets: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 # ไม่บังคับ: DISCORD_WEBHOOK_URL → แจ้งเข้า Discord ตอน index ครบ (ครั้งเดียว) และตอนรอบเก็บ index ล้มเหลว
 name: Index songs
@@ -32,7 +33,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Index chordzaa + chordtabs
+      - name: Index chordzaa + chordtabs + dochord (Common Crawl)
         id: index
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

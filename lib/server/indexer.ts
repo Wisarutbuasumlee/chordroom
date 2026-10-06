@@ -7,7 +7,7 @@ import { fetchPageTitle, parseTitle, USER_AGENT } from "./titles";
  * - เช็ก robots.txt ก่อนทุกครั้ง และอ่าน sitemap จาก robots.txt
  * - อ่านแค่ <title> ของหน้าเพลง ไม่เก็บเนื้อคอร์ด
  * - ทีละน้อย ช้าๆ และทำต่อจากที่ค้างไว้ได้ (ข้ามลิงก์ที่มีใน index แล้ว)
- * dochord ไม่อยู่ในนี้: เว็บปิด sitemap/REST/feed จากบอตไว้ จึงไม่เก็บ
+ * dochord ไม่อยู่ในนี้: เว็บปิด sitemap/REST/feed จากบอตไว้ จึงเก็บจากสำเนาใน Common Crawl แทน (commonCrawl.ts)
  */
 interface SourceConfig {
   origin: string;

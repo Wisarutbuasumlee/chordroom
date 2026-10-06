@@ -5,7 +5,7 @@ export interface SourceInfo {
   label: string;
   host: string;
   home: string;
-  /** อยู่ใน index ค้นหาของเราไหม (dochord ปิดกั้นบอต จึงค้นผ่านหน้าเว็บของเขาแทน) */
+  /** index ครบจาก sitemap ไหม (dochord ปิดกั้นบอต มีแค่บางส่วนจาก Common Crawl + Brave จึงยังค้นผ่านหน้าเว็บของเขาได้) */
   indexed: boolean;
 }
 
@@ -42,7 +42,7 @@ export function sourceFromUrl(raw: string): { source: SourceId; url: string } | 
   return { source: match.id, url: u.toString() };
 }
 
-/** หน้าค้นหาของ dochord (WordPress) · เราไม่ได้ทำ index ของเว็บนี้ ให้ผู้ใช้ค้นบนเว็บเขาเอง */
+/** หน้าค้นหาของ dochord (WordPress) · index ของเรามีเพลง dochord ไม่ครบ ให้ผู้ใช้ค้นบนเว็บเขาเองได้ */
 export function dochordSearchUrl(q: string): string {
   return `https://www.dochord.com/?s=${encodeURIComponent(q.trim())}`;
 }
