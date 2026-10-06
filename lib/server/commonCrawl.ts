@@ -138,6 +138,17 @@ function breadcrumbName(html: string): string | null {
   return null;
 }
 
+/** breadcrumb ใช้เครื่องหมายแบบพิมพ์ (’ … –) แต่ <title> ใช้แบบธรรมดา (' ... -) จึงทำให้เหมือนกันก่อนเทียบ */
+function foldPunctuation(s: string): string {
+  return s
+    .replace(/[‘’ʼ]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/…/g, "...")
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /**
  * "คอร์ดเพลง เจ้าสาวที่กลัวฝน เต๋อ เรวัต พุทธินันท์ | dochord.com"
  * ชื่อเพลงกับศิลปินคั่นด้วยช่องว่าง จึงใช้ชื่อเพลงจาก breadcrumb แยก ส่วนที่เหลือคือศิลปิน
@@ -147,12 +158,10 @@ export function parseDochordPage(html: string): ParsedTitle | null {
   if (!raw) return null;
   const t = decodeEntities(raw).replace(/\s+/g, " ").trim();
   if (!/^คอร์ดเพลง/.test(t)) return null; // หน้าแรก/หมวด/ศิลปิน ไม่ใช่หน้าเพลง
-  const body = t
-    .replace(/\s*[|\-–]\s*dochord\.com\s*$/i, "")
-    .replace(/^คอร์ดเพลง\s*/, "")
-    .trim();
+  const body = foldPunctuation(t.replace(/\s*[|\-–]\s*dochord\.com\s*$/i, "").replace(/^คอร์ดเพลง\s*/, ""));
   if (!body) return null;
-  const song = breadcrumbName(html);
+  const crumb = breadcrumbName(html);
+  const song = crumb && foldPunctuation(crumb);
   if (song && body.startsWith(song)) {
     return { title: song, artist: body.slice(song.length).trim() || null };
   }

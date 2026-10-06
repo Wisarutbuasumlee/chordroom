@@ -31,6 +31,8 @@ export interface Store {
   setState(key: string, value: unknown): Promise<void>;
   upsertSongs(rows: NewSong[]): Promise<number>;
   songsByUrls(urls: string[]): Promise<SongRow[]>;
+  /** ชื่อเพลง/ศิลปิน (normalize แล้ว) ชุดไหนมีอยู่ใน index แล้วบ้าง (ชื่อเพลงนับเฉพาะแถวที่มีศิลปิน) · ใช้แยกชื่อเพลงกับศิลปินของ dochord */
+  existingNames(titles: string[], artists: string[]): Promise<{ titles: Set<string>; artists: Set<string> }>;
   /** จองโควตาค้นผ่าน search engine: คืน true ถ้าคำนี้ยังไม่เคยค้นใน 30 วันและเดือนนี้ยังไม่ถึง limit */
   takeWebSearch(qNormalized: string, limit: number): Promise<boolean>;
   /** search engine ตอบไม่สำเร็จ: ลบคำนี้ออกจากรายการที่ค้นแล้ว ครั้งหน้าจะได้ลองใหม่ */

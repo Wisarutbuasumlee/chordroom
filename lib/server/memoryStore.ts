@@ -151,6 +151,19 @@ export function memoryStore(): Store {
       (state.appState ??= new Map()).set(key, value);
     },
 
+    async existingNames(titles, artists) {
+      const t = new Set(titles);
+      const a = new Set(artists);
+      const found = { titles: new Set<string>(), artists: new Set<string>() };
+      for (const s of songs()) {
+        const nt = normalize(s.title);
+        const na = normalize(s.artist);
+        if (t.has(nt) && s.artist) found.titles.add(nt);
+        if (a.has(na)) found.artists.add(na);
+      }
+      return found;
+    },
+
     async songsByUrls(urls) {
       const set = new Set(urls);
       return songs().filter((s) => set.has(s.url));

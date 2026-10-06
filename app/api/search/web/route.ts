@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { normalize } from "@/lib/normalize";
 import { braveEnabled, braveMonthlyLimit, braveSearchDochord } from "@/lib/server/braveSearch";
+import { splitDochordArtist } from "@/lib/server/dochordArtist";
 import { getStore } from "@/lib/server/store";
 import type { SearchHit, SongRow } from "@/lib/types";
 
@@ -43,7 +44,10 @@ export async function GET(req: NextRequest) {
       if (outcome.status === "quota") await store.blockWebSearch(new Date(Date.now() + BLOCK_MS));
     } else if (outcome.songs.length) {
       const found = outcome.songs;
-      await store.upsertSongs(found);
+      // เพลงที่มีใน index แล้ว (เช่น จาก Common Crawl ที่แยกศิลปินไว้แล้ว) ไม่เขียนทับ · เพลงใหม่ลองแยกศิลปินก่อนบันทึก
+      const existing = new Set((await store.songsByUrls(found.map((f) => f.url))).map((r) => r.url));
+      const unseen = found.filter((f) => !existing.has(f.url));
+      await store.upsertSongs(await Promise.all(unseen.map((f) => splitDochordArtist(store, f))));
       const byUrl = new Map((await store.songsByUrls(found.map((f) => f.url))).map((r) => [r.url, r]));
       // ชื่อที่มีคำค้นอยู่จริงขึ้นก่อน (ตามลำดับของ search engine) ที่เหลือเป็นผลใกล้เคียง เก็บไว้แค่ 5
       const all = found.map((f) => byUrl.get(f.url)).filter((r): r is SongRow => !!r);

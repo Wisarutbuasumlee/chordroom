@@ -226,6 +226,20 @@ export function supabaseStore(): Store {
       if (error) throw error;
     },
 
+    async existingNames(titles, artists) {
+      const found = async (column: "normalized_title" | "normalized_artist", values: string[]) => {
+        if (!values.length) return new Set<string>();
+        // ชื่อเพลงนับเฉพาะแถวที่มีศิลปิน (แถวจาก search engine ที่ชื่อเพลงกับศิลปินยังรวมกันอยู่ไม่นับ)
+        let query = db().from("songs").select(column).in(column, values);
+        if (column === "normalized_title") query = query.neq("normalized_artist", "");
+        const { data, error } = await query.limit(1000);
+        if (error) throw error;
+        return new Set((data ?? []).map((r) => (r as Record<string, string>)[column]));
+      };
+      const [t, a] = await Promise.all([found("normalized_title", titles), found("normalized_artist", artists)]);
+      return { titles: t, artists: a };
+    },
+
     async songsByUrls(urls) {
       if (!urls.length) return [];
       const { data, error } = await db().from("songs").select("id, title, artist, source, url").in("url", urls);
