@@ -34,8 +34,11 @@ import SearchPanel from "./SearchPanel";
 const roundBtn =
   "flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-edge bg-surface text-ink no-underline";
 
-/** เปิดหน้าต่างแก้ไขห้อง (ชื่อห้อง ชื่อของเรา คนในห้อง) · compact = ปุ่มกลมไอคอนอย่างเดียว */
-function EditRoomButton({ compact = false, className = "" }: { compact?: boolean; className?: string }) {
+/**
+ * เปิดหน้าต่างแก้ไขห้อง (ชื่อห้อง ชื่อของเรา คนในห้อง) · compact = ปุ่มกลมไอคอนอย่างเดียว
+ * onHl = วางบนการ์ดสีเหลือง: ใช้สีตายตัวแบบปุ่มอื่นในการ์ด (สี ink/surface กลับด้านตอนธีมมืด จะกลายเป็นตัวขาวบนพื้นขาว)
+ */
+function EditRoomButton({ compact = false, onHl = false }: { compact?: boolean; onHl?: boolean }) {
   const { openSettings } = useRoomCtx();
   return (
     <button
@@ -46,7 +49,9 @@ function EditRoomButton({ compact = false, className = "" }: { compact?: boolean
       className={
         compact
           ? roundBtn
-          : `flex h-11 shrink-0 items-center gap-1.5 rounded-full border-2 border-edge bg-surface px-3.5 text-sm font-bold text-ink ${className}`
+          : `flex shrink-0 items-center gap-1.5 rounded-full border-2 px-3.5 text-sm font-bold ${
+              onHl ? "h-9 border-[#0F1A2B] bg-white text-[#0F1A2B]" : "h-11 border-edge bg-surface text-ink"
+            }`
       }
     >
       <PencilIcon size={18} />
@@ -381,7 +386,7 @@ export function DeskRoom() {
                   {!connected && <span> · กำลังเชื่อมต่อ…</span>}
                 </div>
               </div>
-              <EditRoomButton className="h-9 border-[#0F1A2B] bg-white text-[#0F1A2B]" />
+              <EditRoomButton onHl />
             </div>
             <div className="flex gap-2">
               <button
