@@ -67,11 +67,27 @@ async function fetchWithRetry(url: string, init: RequestInit = {}, tries = 4): P
   return null;
 }
 
+/** เหมือน fetchWithRetry แต่อ่านเนื้อหาให้จบด้วย · server ชอบตัดการเชื่อมต่อกลางคำตอบ (TypeError: terminated) */
+async function fetchTextWithRetry(url: string, tries = 4): Promise<{ status: number; text: string } | null> {
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, signal: AbortSignal.timeout(120_000) });
+      if (res.ok || res.status === 404) return { status: res.status, text: await res.text() };
+    } catch {}
+    await sleep(4_000 * (i + 1));
+  }
+  return null;
+}
+
 async function listCrawls(): Promise<string[] | null> {
-  const res = await fetchWithRetry(`${INDEX_SERVER}/collinfo.json`);
-  if (!res?.ok) return null;
-  const cols = (await res.json()) as { id: string }[];
-  return cols.map((c) => c.id); // ใหม่สุดก่อน
+  const res = await fetchTextWithRetry(`${INDEX_SERVER}/collinfo.json`);
+  if (res?.status !== 200) return null;
+  try {
+    const cols = JSON.parse(res.text) as { id: string }[];
+    return cols.map((c) => c.id); // ใหม่สุดก่อน
+  } catch {
+    return null;
+  }
 }
 
 /** หน้าเพลง dochord ในรอบเก็บนี้ (เอาสำเนาล่าสุดของแต่ละหน้า) · complete = false ถ้า server ตอบไม่ครบ */
@@ -79,7 +95,7 @@ async function crawlSongs(crawl: string): Promise<{ records: Map<string, CdxReco
   const records = new Map<string, CdxRecord>();
   let complete = true;
   for (const host of ["www.dochord.com", "dochord.com"]) {
-    const res = await fetchWithRetry(`${INDEX_SERVER}/${crawl}-index?url=${host}/*&output=json&filter=status:200`);
+    const res = await fetchTextWithRetry(`${INDEX_SERVER}/${crawl}-index?url=${host}/*&output=json&filter=status:200`);
     // ถาม index ทีละครั้ง เว้นจังหวะ ตามที่ Common Crawl ขอ
     await sleep(2_000);
     if (!res) {
@@ -87,7 +103,7 @@ async function crawlSongs(crawl: string): Promise<{ records: Map<string, CdxReco
       continue;
     }
     if (res.status === 404) continue;
-    for (const line of (await res.text()).split("\n")) {
+    for (const line of res.text.split("\n")) {
       if (!line.startsWith("{")) continue;
       let r: CdxRecord;
       try {
