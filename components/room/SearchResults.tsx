@@ -141,7 +141,7 @@ export default function SearchResults(props: ResultsProps) {
       </div>
     ) : (
       <p className="rounded-[18px] border-2 border-edge bg-surface p-3.5 text-[15px]">
-        รับเฉพาะลิงก์จาก dochord.com, chordzaa.com หรือ chordtabs.in.th
+        รับเฉพาะลิงก์หน้าเพลงจาก dochord.com, chordzaa.com หรือ chordtabs.in.th (เช่น https://www.dochord.com/12345/)
       </p>
     );
   }

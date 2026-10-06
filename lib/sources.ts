@@ -21,9 +21,13 @@ export function isSourceId(v: unknown): v is SourceId {
   return v === "dochord" || v === "chordzaa" || v === "chordtabs";
 }
 
+/** หน้าเพลงของทั้ง 3 เว็บเป็นเลขหน้าล้วน เช่น /15536/ */
+const SONG_PATH = /^\/(\d{1,9})\/?$/;
+
 /**
- * ยอมรับเฉพาะลิงก์ https ของ 3 เว็บนี้ · ทุกคนในห้องจะถูกพาไปที่ลิงก์นี้
- * จึงต้องไม่ปล่อยให้ใครส่งลิงก์เว็บอื่นเข้ามาในห้อง
+ * ยอมรับเฉพาะลิงก์หน้าเพลงของ 3 เว็บนี้ · ทุกคนในห้องจะถูกพาไปที่ลิงก์นี้
+ * จึงไม่รับเว็บอื่น ซับโดเมนอื่น หรือหน้าอื่นของเว็บเดียวกัน (หน้าค้นหา ?s=ข้อความ, หน้าล็อกอิน ฯลฯ)
+ * และสร้างลิงก์ใหม่จากเลขหน้า (ตัด query/hash ทิ้ง) ให้ตรงกับลิงก์ใน index
  */
 export function sourceFromUrl(raw: string): { source: SourceId; url: string } | null {
   let u: URL;
@@ -33,13 +37,12 @@ export function sourceFromUrl(raw: string): { source: SourceId; url: string } | 
     return null;
   }
   if (u.protocol !== "https:" && u.protocol !== "http:") return null;
-  if (u.username || u.password) return null;
+  if (u.username || u.password || u.port) return null;
   const host = u.hostname.toLowerCase().replace(/^www\./, "");
-  const match = SOURCES.find((s) => host === s.host || host.endsWith("." + s.host));
-  if (!match) return null;
-  u.protocol = "https:";
-  u.hash = "";
-  return { source: match.id, url: u.toString() };
+  const match = SOURCES.find((s) => host === s.host);
+  const page = u.pathname.match(SONG_PATH)?.[1];
+  if (!match || !page) return null;
+  return { source: match.id, url: new URL(`/${page}/`, match.home).toString() };
 }
 
 /** หน้าค้นหาของ dochord (WordPress) · index ของเรามีเพลง dochord ไม่ครบ ให้ผู้ใช้ค้นบนเว็บเขาเองได้ */

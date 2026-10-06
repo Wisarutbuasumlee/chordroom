@@ -1,3 +1,4 @@
+import { hasLink } from "@/lib/linkText";
 import { isSourceId, SOURCE_BY_ID, sourceFromUrl } from "@/lib/sources";
 import { cleanText, jsonError, readJson, roomCodeParam } from "@/lib/server/http";
 import { getStore } from "@/lib/server/store";
@@ -19,6 +20,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/so
   const body = await readJson<Body>(req);
   const by = cleanText(body.by, 24);
   if (!by) return jsonError("ต้องมีชื่อคนเปลี่ยนเพลง", 400);
+  if (hasLink(by)) return jsonError("ชื่อห้ามมีลิงก์หรือชื่อเว็บ", 400);
 
   const store = getStore();
   let pick: SongPick | null = null;
@@ -32,23 +34,36 @@ export async function POST(req: Request, ctx: RouteContext<"/api/rooms/[code]/so
 
   if (!pick && typeof body.url === "string") {
     const parsed = sourceFromUrl(body.url);
-    if (!parsed) return jsonError("รับเฉพาะลิงก์จาก dochord.com, chordzaa.com หรือ chordtabs.in.th", 400);
-    let title = cleanText(body.title, 120);
-    let artist = cleanText(body.artist, 80);
-    if (!title) {
-      // ผู้ใช้วางลิงก์เอง: อ่านแค่ชื่อหน้าเพื่อแสดงชื่อเพลง
-      const raw = await fetchPageTitle(parsed.url, 6000);
-      const t = raw ? parseTitle(parsed.source, raw) : null;
-      title = t?.title ?? null;
-      artist = artist ?? t?.artist ?? null;
+    if (!parsed) return jsonError("รับเฉพาะลิงก์หน้าเพลงจาก dochord.com, chordzaa.com หรือ chordtabs.in.th", 400);
+    // เพลงที่มีใน index ใช้ชื่อจาก index เสมอ ไม่ใช้ชื่อที่ส่งมา
+    const [indexed] = await store.songsByUrls([parsed.url]);
+    if (indexed && isSourceId(indexed.source)) {
+      pick = {
+        songId: indexed.id,
+        source: indexed.source,
+        url: indexed.url,
+        title: indexed.title,
+        artist: indexed.artist,
+      };
+    } else {
+      let title = cleanText(body.title, 120);
+      let artist = cleanText(body.artist, 80);
+      if (hasLink(title) || hasLink(artist)) return jsonError("ชื่อเพลงห้ามมีลิงก์หรือชื่อเว็บ", 400);
+      if (!title) {
+        // ผู้ใช้วางลิงก์เอง: อ่านแค่ชื่อหน้าเพื่อแสดงชื่อเพลง
+        const raw = await fetchPageTitle(parsed.url, 6000);
+        const t = raw ? parseTitle(parsed.source, raw) : null;
+        title = t?.title ?? null;
+        artist = artist ?? t?.artist ?? null;
+      }
+      pick = {
+        songId: null,
+        source: parsed.source,
+        url: parsed.url,
+        title: title ?? `เพลงจาก ${SOURCE_BY_ID[parsed.source].host}`,
+        artist,
+      };
     }
-    pick = {
-      songId: null,
-      source: parsed.source,
-      url: parsed.url,
-      title: title ?? `เพลงจาก ${SOURCE_BY_ID[parsed.source].host}`,
-      artist,
-    };
   }
 
   if (!pick) return jsonError("ไม่พบเพลงนี้", 400);

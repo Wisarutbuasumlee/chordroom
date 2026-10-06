@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { safeName } from "@/lib/linkText";
 import { connectRoom, type RoomChannel } from "@/lib/realtime";
 import type { Member, RoomSnapshot, RoomSong } from "@/lib/types";
 
@@ -53,18 +54,42 @@ export function useRoom(code: string, name: string | null) {
 
   const refresh = useCallback(() => fetchRoom(code).then(apply), [code, apply]);
 
+  /**
+   * ข้อความ realtime ใครก็ส่งเข้าห้องได้ (คีย์ Supabase อยู่ในหน้าเว็บ) จึงไม่เชื่อลิงก์/ชื่อในข้อความ
+   * ใช้เป็นแค่สัญญาณให้ดึงเพลงจริงจาก server (ที่ตรวจลิงก์แล้ว)
+   * ถ้ามีข้อความรัวเข้ามาระหว่างดึง ไม่ยิงซ้อน แต่ดึงอีกรอบเดียวหลังรอบนี้จบ (จะได้ไม่พลาดเพลงล่าสุด)
+   */
+  const syncing = useRef(false);
+  const queued = useRef<{ kind: RoomEvent["kind"]; by: (s: RoomSnapshot) => string } | null>(null);
+  const syncFromServer = useCallback(
+    async (kind: RoomEvent["kind"], by: (s: RoomSnapshot) => string) => {
+      queued.current = { kind, by };
+      if (syncing.current) return;
+      syncing.current = true;
+      try {
+        while (queued.current) {
+          const job = queued.current;
+          queued.current = null;
+          const r = await fetchRoom(code);
+          apply(r);
+          if (r.kind === "ok") setLastEvent({ kind: job.kind, by: job.by(r.snapshot), at: Date.now(), self: false });
+        }
+      } finally {
+        syncing.current = false;
+      }
+    },
+    [code, apply],
+  );
+
   useEffect(() => {
     fetchRoom(code).then(apply);
     const ch = connectRoom(code, {
-      onSongSet: (e) => {
-        setSnapshot((prev) => (prev ? mergeSong(prev, e.song) : prev));
-        setLastEvent({ kind: "set", by: e.by, at: Date.now(), self: false });
-      },
-      onSongUndo: (e) => {
-        setLastEvent({ kind: "undo", by: e.by, at: Date.now(), self: false });
-        void refresh();
-      },
-      onPresence: setMembers,
+      onSongSet: () => void syncFromServer("set", (s) => s.current?.openedBy ?? "มีคน"),
+      // server ไม่ได้จดว่าใครกดย้อน จึงใช้ชื่อในข้อความ แต่ไม่แสดงถ้ามีลิงก์ปนมา
+      onSongUndo: (e) => void syncFromServer("undo", () => safeName(String(e.by ?? ""))),
+      // ชื่อใน presence มาจากเครื่องคนอื่นตรงๆ ไม่ผ่าน server: ตัดความยาว และซ่อนชื่อที่มีลิงก์
+      onPresence: (list) =>
+        setMembers(list.map((m) => ({ ...m, name: safeName(String(m.name ?? "").slice(0, 24), "ไม่ระบุชื่อ") }))),
       onStatus: setConnected,
     });
     channel.current = ch;
@@ -86,7 +111,7 @@ export function useRoom(code: string, name: string | null) {
       ch.close();
       channel.current = null;
     };
-  }, [code, apply, refresh]);
+  }, [code, apply, refresh, syncFromServer]);
 
   /** ส่ง presence ของเรา (ชื่อ สี และแท็บคอร์ดตามห้องอยู่ไหม) */
   const track = useCallback((m: Member) => {
