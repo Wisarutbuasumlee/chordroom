@@ -20,13 +20,28 @@ export const INDEXED_SOURCES: Partial<Record<SourceId, SourceConfig>> = {
   chordtabs: { origin: "https://chordtabs.in.th", songPath: /^\/\d+\/$/ },
 };
 
-async function fetchText(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { headers: { "user-agent": USER_AGENT } });
-    return res.ok ? await res.text() : null;
-  } catch {
-    return null;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * ใช้กับ robots.txt / sitemap · ลองซ้ำเพราะบางรอบเว็บตอบช้าหรือตัดการเชื่อมต่อจาก GitHub Actions
+ * (9 ต.ค. 2026 sitemap ของ chordzaa อ่านไม่ได้รอบเดียว รอบนั้นจึงได้ 0 เพลง) · ดึงไม่ได้ทุกครั้ง → บอกเหตุผลใน log
+ */
+async function fetchText(url: string, log: (m: string) => void = () => {}, tries = 3): Promise<string | null> {
+  let reason = "";
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url, { headers: { "user-agent": USER_AGENT }, signal: AbortSignal.timeout(60_000) });
+      if (res.ok) return await res.text();
+      reason = `HTTP ${res.status}`;
+      // 404 / 403 ลองซ้ำก็ไม่หาย
+      if (res.status === 404 || res.status === 403) break;
+    } catch (e) {
+      reason = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    }
+    if (i < tries - 1) await sleep(3_000 * (i + 1));
   }
+  log(`ดึง ${url} ไม่ได้ (${reason})`);
+  return null;
 }
 
 interface Robots {
@@ -59,8 +74,8 @@ function allowed(robots: Robots, pathname: string): boolean {
   return !robots.disallow.some((d) => pathname.startsWith(d));
 }
 
-async function sitemapUrls(url: string, depth = 0): Promise<string[]> {
-  const body = await fetchText(url);
+async function sitemapUrls(url: string, log: (m: string) => void, depth = 0): Promise<string[]> {
+  const body = await fetchText(url, log);
   if (!body) return [];
   if (!body.trimStart().startsWith("<")) {
     return body
@@ -70,7 +85,7 @@ async function sitemapUrls(url: string, depth = 0): Promise<string[]> {
   }
   const locs = [...body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((m) => m[1]);
   if (/<sitemapindex/i.test(body) && depth < 2) {
-    const nested = await Promise.all(locs.map((l) => sitemapUrls(l, depth + 1)));
+    const nested = await Promise.all(locs.map((l) => sitemapUrls(l, log, depth + 1)));
     return nested.flat();
   }
   return locs;
@@ -102,8 +117,6 @@ export interface IndexReport {
   skippedReason?: string;
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 interface Plan {
   source: SourceId;
   report: IndexReport;
@@ -129,7 +142,7 @@ async function planSource(store: Store, source: SourceId, log: (m: string) => vo
     return plan;
   }
 
-  const robotsTxt = await fetchText(`${cfg.origin}/robots.txt`);
+  const robotsTxt = await fetchText(`${cfg.origin}/robots.txt`, log);
   if (robotsTxt === null) {
     report.skippedReason = "อ่าน robots.txt ไม่ได้ จึงไม่เก็บ";
     return plan;
@@ -140,7 +153,7 @@ async function planSource(store: Store, source: SourceId, log: (m: string) => vo
     return plan;
   }
 
-  const all = (await Promise.all(robots.sitemaps.map((s) => sitemapUrls(s)))).flat();
+  const all = (await Promise.all(robots.sitemaps.map((s) => sitemapUrls(s, log)))).flat();
   const songUrls = [
     ...new Set(
       all.filter((u) => {
